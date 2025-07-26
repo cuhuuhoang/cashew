@@ -33,8 +33,6 @@ public class Game {
 		MapData map = new MapData();
 		Player player = new Player(map, coordsBox, lookBox);
 
-//		Deque<String> messages = new LinkedList<>();
-
 		while (true) {
 			terminal.puts(Capability.clear_screen);
 			terminal.flush();
@@ -107,15 +105,6 @@ public class Game {
 				}
 			}
 
-			Room room = map.getRoom(player.x, player.y);
-			lookBox.clear();
-			if (room.getAltar() != null && room.getAltar().level > 0) {
-				lookBox.addMessage("Altar lv." + room.getAltar().level);
-			} else {
-				lookBox.addMessage("Nothing");
-			}
-			coordsBox.clear();
-			coordsBox.addMessage(player.x + "," + player.y);
 
 			// Keep message queue size small
 //			while (messages.size() > 50) messages.removeFirst();

@@ -12,8 +12,10 @@ public class Player {
 
 	public final @Nullable MessageBox coordsBox;
 	public final @Nullable MessageBox lookBox;
+	public final MapData map;
 
 	public Player(MapData map, @Nullable MessageBox coordsBox, @Nullable MessageBox lookBox) {
+		this.map = map;
 		this.coordsBox = coordsBox;
 		this.lookBox = lookBox;
 		Random rand = new Random();
@@ -29,6 +31,7 @@ public class Player {
 				break;
 			}
 		}
+		this.look();
 	}
 
 	public int getX() { return x; }
@@ -40,6 +43,23 @@ public class Player {
 		if (map.inBounds(newX, newY)) {
 			x = newX;
 			y = newY;
+			look();
+		}
+	}
+
+	private void look() {
+		if (lookBox != null) {
+			Room room = map.getRoom(x, y);
+			lookBox.clear();
+			if (room.getAltar() != null && room.getAltar().level > 0) {
+				lookBox.addMessage("Altar lv." + room.getAltar().level);
+			} else {
+				lookBox.addMessage("Nothing");
+			}
+		}
+		if (coordsBox != null) {
+			coordsBox.clear();
+			coordsBox.addMessage(x + "," + y);
 		}
 	}
 }
