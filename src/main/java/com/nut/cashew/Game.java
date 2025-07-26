@@ -73,7 +73,7 @@ public class Game {
 			int msgDisplay = Math.min(messageDisplay, recent.size());
 			StringBuilder sb = new StringBuilder();	
 			for (int i = recent.size() - msgDisplay; i < recent.size(); i++) {
-				sb.append("│ ").append(recent.get(i)).append("\n");
+				sb.append("│ ").append(recent.get(i));
 			}
 			rightPanel.add(sb.toString());
 			sb.setLength(0);
