@@ -13,7 +13,7 @@ import java.util.*;
 
 public class Game {
 	static final int VIEW_WIDTH = 21;
-	static final int VIEW_HEIGHT = 12;
+	static final int VIEW_HEIGHT = 11;
 	public static void main(String[] args) throws IOException {
 		Terminal terminal = TerminalBuilder.terminal();
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
