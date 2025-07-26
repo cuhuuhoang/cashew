@@ -1,12 +1,21 @@
 package com.nut.cashew;
 
+
+
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Random;
 
 public class Player {
 	public int x;
 	public int y;
 
-	public Player(MapData map) {
+	public final @Nullable MessageBox coordsBox;
+	public final @Nullable MessageBox lookBox;
+
+	public Player(MapData map, @Nullable MessageBox coordsBox, @Nullable MessageBox lookBox) {
+		this.coordsBox = coordsBox;
+		this.lookBox = lookBox;
 		Random rand = new Random();
 		while (true) {
 			double angle = rand.nextDouble() * 2 * Math.PI;

@@ -29,6 +29,10 @@ public class MessageBox {
 		}
 	}
 
+	public void clear() {
+		messages.clear();
+	}
+
 	public List<String> box() {
 		List<String> result = new LinkedList<>();
 		result.add(topBorder(name, width));

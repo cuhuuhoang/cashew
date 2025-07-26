@@ -26,11 +26,13 @@ public class Game {
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
 		terminal.enterRawMode();
 
+		MessageBox messageBox = new MessageBox("Messages", RIGHT_WIDTH, 5);
+		MessageBox coordsBox = new MessageBox("Coordinates", RIGHT_WIDTH, 1);
+		MessageBox lookBox = new MessageBox("Look", RIGHT_WIDTH, 2);
+
 		MapData map = new MapData();
 		Player player = new Player(map);
 
-		MessageBox messageBox = new MessageBox("Messages", RIGHT_WIDTH, 5);
-		MessageBox coordsBox = new MessageBox("Coordinates", RIGHT_WIDTH, 1);
 //		Deque<String> messages = new LinkedList<>();
 
 		while (true) {
@@ -105,11 +107,13 @@ public class Game {
 			}
 
 			Room room = map.getRoom(player.x, player.y);
+			lookBox.clear();
 			if (room.getAltar() != null && room.getAltar().level > 0) {
-				messageBox.addMessage("You see an altar of level " + room.getAltar().level);
+				lookBox.addMessage("Altar lv." + room.getAltar().level);
 			} else {
-				messageBox.addMessage("You see nothing interesting");
+				lookBox.addMessage("Nothing");
 			}
+			coordsBox.clear();
 			coordsBox.addMessage(player.x + "," + player.y);
 
 			// Keep message queue size small
