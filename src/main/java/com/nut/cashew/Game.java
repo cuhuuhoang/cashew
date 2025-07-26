@@ -13,7 +13,7 @@ import java.util.*;
 
 public class Game {
 	static final int VIEW_WIDTH = 21;
-	static final int VIEW_HEIGHT = 6;
+	static final int VIEW_HEIGHT = 10;
 	public static void main(String[] args) throws IOException {
 		Terminal terminal = TerminalBuilder.terminal();
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
@@ -48,20 +48,20 @@ public class Game {
 				terminal.writer().print("│");
 				terminal.writer().println();
 			}
-			terminal.writer().println("╰────────────────────────────────────────╯");
+			terminal.writer().println("╰──────────────────────────────────╯");
 
 			// Middle panel - Messages
-			terminal.writer().println("╭─ Messages ─────────────────────────────╮");
-			List<String> recent = new ArrayList<>(messages);
-			int messageDisplay = 3;
-			int msgDisplay = Math.min(messageDisplay, recent.size());
-			for (int i = recent.size() - msgDisplay; i < recent.size(); i++) {
-				terminal.writer().println("│ " + recent.get(i));
-			}
-			for (int i = msgDisplay; i < messageDisplay; i++) {
-				terminal.writer().println("│");
-			}
-			terminal.writer().println("╰───────────────────────────────────────────────╯");
+//			terminal.writer().println("╭─ Messages ─────────────────────────────╮");
+//			List<String> recent = new ArrayList<>(messages);
+//			int messageDisplay = 3;
+//			int msgDisplay = Math.min(messageDisplay, recent.size());
+//			for (int i = recent.size() - msgDisplay; i < recent.size(); i++) {
+//				terminal.writer().println("│ " + recent.get(i));
+//			}
+//			for (int i = msgDisplay; i < messageDisplay; i++) {
+//				terminal.writer().println("│");
+//			}
+//			terminal.writer().println("╰───────────────────────────────────────────────╯");
 
 			// Bottom panel - Input
 			String line = reader.readLine("> ");
