@@ -19,8 +19,13 @@ public class Game {
 	static final int VIEW_HEIGHT = FULL_HEIGHT - 3;
 
 	private static String topBorder(String name, int width) {
-		return "╭─ " + name + " " + "─".repeat(width - name.length() - 5) + "╮";
+		return "╭─ " + name + " " + "─".repeat(width - name.length() - 3) + "╮";
 	}
+
+	private static String bottomBorder(int width) {
+		return "╰" + "─".repeat(width) + "╯";
+	}
+
 	public static void main(String[] args) throws IOException {
 		Terminal terminal = TerminalBuilder.terminal();
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
@@ -55,7 +60,7 @@ public class Game {
 				terminal.writer().print("│");
 				terminal.writer().println();
 			}
-			terminal.writer().println("╰──────────────────────────────────╯");
+			terminal.writer().println(bottomBorder(VIEW_WIDTH));
 
 			// Middle panel - Messages
 //			terminal.writer().println("╭─ Messages ─────────────────────────────╮");
