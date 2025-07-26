@@ -71,16 +71,15 @@ public class Game {
 			List<String> recent = new ArrayList<>(messages);
 			int messageDisplay = 3;
 			int msgDisplay = Math.min(messageDisplay, recent.size());
-			StringBuilder sb = new StringBuilder();	
 			for (int i = recent.size() - msgDisplay; i < recent.size(); i++) {
+				StringBuilder sb = new StringBuilder();
 				sb.append("│ ").append(recent.get(i));
+				rightPanel.add(sb.toString());
 			}
-			rightPanel.add(sb.toString());
-			sb.setLength(0);
+
 			for (int i = msgDisplay; i < messageDisplay; i++) {
-				sb.append("│");
+				rightPanel.add("│");
 			}
-			rightPanel.add(sb.toString());
 			rightPanel.add(bottomBorder(FULL_WIDTH - VIEW_WIDTH - 4));
 
 			// Print combined panels
