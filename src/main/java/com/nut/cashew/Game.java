@@ -26,7 +26,7 @@ public class Game {
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
 		terminal.enterRawMode();
 
-		MessageBox messageBox = new MessageBox("Messages", RIGHT_WIDTH, 5);
+		MessageBox messageBox = new MessageBox("Messages", RIGHT_WIDTH, 4);
 		MessageBox coordsBox = new MessageBox("Coordinates", RIGHT_WIDTH, 1);
 		MessageBox lookBox = new MessageBox("Look", RIGHT_WIDTH, 2);
 
@@ -68,6 +68,7 @@ public class Game {
 			List<String> rightPanel = new LinkedList<>();
 			rightPanel.addAll(messageBox.box());
 			rightPanel.addAll(coordsBox.box());
+			rightPanel.addAll(lookBox.box());
 			// Middle panel - Messages
 
 			// Print combined panels
