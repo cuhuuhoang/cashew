@@ -61,7 +61,7 @@ public class Game {
 			for (int i = msgDisplay; i < messageDisplay; i++) {
 				terminal.writer().println("│");
 			}
-			terminal.writer().println("╰────────────────────────────────────────────────╯");
+			terminal.writer().println("╰───────────────────────────────────────────────╯");
 
 			// Bottom panel - Input
 			String line = reader.readLine("> ");
