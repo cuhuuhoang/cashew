@@ -23,7 +23,7 @@ public class MessageBox {
 	public void addMessage(String message) {
 		if (message.length() > width) {
 			messages.add(message.substring(0, width));
-			addMessage(message.substring(width));
+			addMessage("-" + message.substring(width));
 		} else {
 			messages.add(message + " ".repeat(width - message.length()));
 		}
