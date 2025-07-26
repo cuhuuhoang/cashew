@@ -31,7 +31,7 @@ public class Game {
 		MessageBox lookBox = new MessageBox("Look", RIGHT_WIDTH, 2);
 
 		MapData map = new MapData();
-		Player player = new Player(map);
+		Player player = new Player(map, coordsBox, lookBox);
 
 //		Deque<String> messages = new LinkedList<>();
 
