@@ -37,13 +37,13 @@ public class MessageBox {
 		int msgDisplay = Math.min(messageDisplay, recent.size());
 		for (int i = recent.size() - msgDisplay; i < recent.size(); i++) {
 			StringBuilder sb = new StringBuilder();
-			sb.append("│ ").append(recent.get(i)).append("│");
+			sb.append("│").append(recent.get(i)).append("│");
 			result.add(sb.toString());
 		}
 
 		for (int i = msgDisplay; i < messageDisplay; i++) {
 			StringBuilder sb = new StringBuilder();
-			sb.append("│ ").append(" ".repeat(width)).append("│");
+			sb.append("│").append(" ".repeat(width)).append("│");
 			result.add(sb.toString());
 		}
 		result.add(bottomBorder(width));
