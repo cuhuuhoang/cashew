@@ -53,11 +53,12 @@ public class Game {
 			// Middle panel - Messages
 			terminal.writer().println("╭─ Messages ─────────────────────────────╮");
 			List<String> recent = new ArrayList<>(messages);
-			int msgDisplay = Math.min(5, recent.size());
+			int messageDisplay = 3;
+			int msgDisplay = Math.min(messageDisplay, recent.size());
 			for (int i = recent.size() - msgDisplay; i < recent.size(); i++) {
 				terminal.writer().println("│ " + recent.get(i));
 			}
-			for (int i = msgDisplay; i < 5; i++) {
+			for (int i = msgDisplay; i < messageDisplay; i++) {
 				terminal.writer().println("│");
 			}
 			terminal.writer().println("╰────────────────────────────────────────╯");
