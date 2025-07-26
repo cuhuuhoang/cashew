@@ -68,12 +68,24 @@ public class Game {
 			if (line == null) continue;
 			if (line.trim().equalsIgnoreCase("quit")) break;
 
-			switch (line.trim()) {
-				case "h" -> player.x--;
-				case "j" -> player.y++;
-				case "k" -> player.y--;
-				case "l" -> player.x++;
-				default -> messages.add("Unknown command: " + line);
+			String command = line.trim();
+			if (command.matches("\\d+[hjkl]")) {
+				int steps = Integer.parseInt(command.substring(0, command.length() - 1));
+				char direction = command.charAt(command.length() - 1);
+				switch (direction) {
+					case 'h' -> player.move(-steps, 0, map);
+					case 'j' -> player.move(0, steps, map);
+					case 'k' -> player.move(0, -steps, map);
+					case 'l' -> player.move(steps, 0, map);
+				}
+			} else {
+				switch (command) {
+					case "h" -> player.move(-1, 0, map);
+					case "j" -> player.move(0, 1, map);
+					case "k" -> player.move(0, -1, map);
+					case "l" -> player.move(1, 0, map);
+					default -> messages.add("Unknown command: " + line);
+				}
 			}
 
 			Room room = map.getRoom(player.x, player.y);
