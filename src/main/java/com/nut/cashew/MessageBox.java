@@ -32,12 +32,11 @@ public class MessageBox {
 	public List<String> box() {
 		List<String> result = new LinkedList<>();
 		result.add(topBorder(name, width));
-		List<String> recent = new ArrayList<>(messages);
 		int messageDisplay = height;
-		int msgDisplay = Math.min(messageDisplay, recent.size());
-		for (int i = recent.size() - msgDisplay; i < recent.size(); i++) {
+		int msgDisplay = Math.min(messageDisplay, messages.size());
+		for (int i = messages.size() - msgDisplay; i < messages.size(); i++) {
 			StringBuilder sb = new StringBuilder();
-			sb.append("│").append(recent.get(i)).append("│");
+			sb.append("│").append(messages.get(i)).append("│");
 			result.add(sb.toString());
 		}
 
