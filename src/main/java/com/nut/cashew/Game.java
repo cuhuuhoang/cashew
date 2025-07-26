@@ -38,42 +38,60 @@ public class Game {
 		while (true) {
 			terminal.puts(Capability.clear_screen);
 			terminal.flush();
+			
+			List<String> leftPanel = new ArrayList<>();
 
 			// Top panel - Map
-			terminal.writer().println(topBorder("Map", VIEW_WIDTH));
+			leftPanel.add(topBorder("Map", VIEW_WIDTH));
 			int startX = player.getX() - VIEW_WIDTH / 2;
 			int startY = player.getY() - VIEW_HEIGHT / 2;
 
 			for (int y = 0; y < VIEW_HEIGHT; y++) {
-				terminal.writer().print("│");
+				StringBuilder sb = new StringBuilder();
+				sb.append("│");
 				for (int x = 0; x < VIEW_WIDTH; x++) {
 					int mapX = startX + x;
 					int mapY = startY + y;
 					if (mapX == player.getX() && mapY == player.getY()) {
-						terminal.writer().print("@");
+						sb.append("@");
 					} else if (map.getRoom(mapX, mapY) == null) {
-						terminal.writer().print(" ");
+						sb.append(" ");
 					} else {
-						terminal.writer().print(map.getRoom(mapX, mapY).render());
+						sb.append(map.getRoom(mapX, mapY).render());
 					}
 				}
-				terminal.writer().print("│");
+				sb.append("│");
+				leftPanel.add(sb.toString());
+			}
+			leftPanel.add(bottomBorder(VIEW_WIDTH));
+
+			List<String> rightPanel = new ArrayList<>();
+			// Middle panel - Messages
+			rightPanel.add(topBorder("Messages", FULL_WIDTH - VIEW_WIDTH - 4));
+			List<String> recent = new ArrayList<>(messages);
+			int messageDisplay = 3;
+			int msgDisplay = Math.min(messageDisplay, recent.size());
+			StringBuilder sb = new StringBuilder();	
+			for (int i = recent.size() - msgDisplay; i < recent.size(); i++) {
+				sb.append("│ ").append(recent.get(i)).append("\n");
+			}
+			rightPanel.add(sb.toString());
+			sb.setLength(0);
+			for (int i = msgDisplay; i < messageDisplay; i++) {
+				sb.append("│");
+			}
+			rightPanel.add(sb.toString());
+			rightPanel.add(bottomBorder(FULL_WIDTH - VIEW_WIDTH - 4));
+
+			// Print combined panels
+			for (int i = 0; i < leftPanel.size(); i++) {
+				terminal.writer().print(leftPanel.get(i));
+				if (i < rightPanel.size()) {
+					terminal.writer().print(rightPanel.get(i));
+				}
 				terminal.writer().println();
 			}
-			terminal.writer().println(bottomBorder(VIEW_WIDTH));
-
-			// Middle panel - Messages
-//			terminal.writer().println("╭─ Messages ─────────────────────────────╮");
-//			List<String> recent = new ArrayList<>(messages);
-//			int messageDisplay = 3;
-//			int msgDisplay = Math.min(messageDisplay, recent.size());
-//			for (int i = recent.size() - msgDisplay; i < recent.size(); i++) {
-//				terminal.writer().println("│ " + recent.get(i));
-//			}
-//			for (int i = msgDisplay; i < messageDisplay; i++) {
-//				terminal.writer().println("│");
-//			}
-//			terminal.writer().println("╰───────────────────────────────────────────────╯");
+			terminal.flush();
 
 			// full width 49
 			// Bottom panel - Input
