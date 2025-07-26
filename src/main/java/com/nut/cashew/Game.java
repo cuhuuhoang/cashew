@@ -13,7 +13,7 @@ import java.util.*;
 
 public class Game {
 	static final int VIEW_WIDTH = 21;
-	static final int VIEW_HEIGHT = 11;
+	static final int VIEW_HEIGHT = 6;
 	public static void main(String[] args) throws IOException {
 		Terminal terminal = TerminalBuilder.terminal();
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
@@ -28,10 +28,12 @@ public class Game {
 			terminal.flush();
 
 			// Top panel - Map
+			terminal.writer().println("╭─ Map ─────────────────────────────╮");
 			int startX = player.getX() - VIEW_WIDTH / 2;
 			int startY = player.getY() - VIEW_HEIGHT / 2;
 
 			for (int y = 0; y < VIEW_HEIGHT; y++) {
+				terminal.writer().print("│");
 				for (int x = 0; x < VIEW_WIDTH; x++) {
 					int mapX = startX + x;
 					int mapY = startY + y;
@@ -43,8 +45,10 @@ public class Game {
 						terminal.writer().print(map.getRoom(mapX, mapY).render());
 					}
 				}
+				terminal.writer().print("│");
 				terminal.writer().println();
 			}
+			terminal.writer().println("╰────────────────────────────────────────╯");
 
 			// Middle panel - Messages
 			terminal.writer().println("╭─ Messages ─────────────────────────────╮");
