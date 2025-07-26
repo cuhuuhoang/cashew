@@ -17,8 +17,9 @@ public class Game {
 	static final int FULL_WIDTH = 49;
 	static final int FULL_HEIGHT = 14;
 
-	static final int VIEW_WIDTH = 21;
-	static final int VIEW_HEIGHT = FULL_HEIGHT - 3;
+	static final int LEFT_WIDTH = 21;
+	static final int RIGHT_WIDTH = FULL_WIDTH - LEFT_WIDTH - 4;
+	static final int MAP_HEIGHT = FULL_HEIGHT - 3;
 
 	public static void main(String[] args) throws IOException {
 		Terminal terminal = TerminalBuilder.terminal();
@@ -27,7 +28,9 @@ public class Game {
 
 		MapData map = new MapData();
 		Player player = new Player(map);
-		MessageBox messageBox = new MessageBox("Messages", FULL_WIDTH - VIEW_WIDTH - 4, 5);
+
+		MessageBox messageBox = new MessageBox("Messages", RIGHT_WIDTH, 5);
+		MessageBox coordsBox = new MessageBox("Coordinates", RIGHT_WIDTH, 1);
 //		Deque<String> messages = new LinkedList<>();
 
 		while (true) {
@@ -37,14 +40,14 @@ public class Game {
 			List<String> leftPanel = new ArrayList<>();
 
 			// Top panel - Map
-			leftPanel.add(topBorder("Map", VIEW_WIDTH));
-			int startX = player.getX() - VIEW_WIDTH / 2;
-			int startY = player.getY() - VIEW_HEIGHT / 2;
+			leftPanel.add(topBorder("Map", LEFT_WIDTH));
+			int startX = player.getX() - LEFT_WIDTH / 2;
+			int startY = player.getY() - MAP_HEIGHT / 2;
 
-			for (int y = 0; y < VIEW_HEIGHT; y++) {
+			for (int y = 0; y < MAP_HEIGHT; y++) {
 				StringBuilder sb = new StringBuilder();
 				sb.append("│");
-				for (int x = 0; x < VIEW_WIDTH; x++) {
+				for (int x = 0; x < LEFT_WIDTH; x++) {
 					int mapX = startX + x;
 					int mapY = startY + y;
 					if (mapX == player.getX() && mapY == player.getY()) {
@@ -58,9 +61,11 @@ public class Game {
 				sb.append("│");
 				leftPanel.add(sb.toString());
 			}
-			leftPanel.add(bottomBorder(VIEW_WIDTH));
+			leftPanel.add(bottomBorder(LEFT_WIDTH));
 
-			List<String> rightPanel = messageBox.box();
+			List<String> rightPanel = new LinkedList<>();
+			rightPanel.addAll(messageBox.box());
+			rightPanel.addAll(coordsBox.box());
 			// Middle panel - Messages
 
 			// Print combined panels
@@ -101,10 +106,11 @@ public class Game {
 
 			Room room = map.getRoom(player.x, player.y);
 			if (room.getAltar() != null && room.getAltar().level > 0) {
-				messageBox.addMessage("You see an altar of level " + room.getAltar().level + " at (" + player.x + "," + player.y + ")");
+				messageBox.addMessage("You see an altar of level " + room.getAltar().level);
 			} else {
-				messageBox.addMessage("You see nothing interesting at (" + player.x + "," + player.y + ")");
+				messageBox.addMessage("You see nothing interesting");
 			}
+			coordsBox.addMessage(player.x + "," + player.y);
 
 			// Keep message queue size small
 //			while (messages.size() > 50) messages.removeFirst();
