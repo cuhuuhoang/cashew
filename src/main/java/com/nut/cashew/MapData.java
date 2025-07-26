@@ -1,21 +1,17 @@
 package com.nut.cashew;
 
 
-import java.util.Random;
-
-public class Map {
+public class MapData {
 	public static final int WIDTH = 101;
 	public static final int HEIGHT = 101;
 	public static final int OFFSET = WIDTH / 2;
 
 	private final Room[][] rooms = new Room[WIDTH][HEIGHT];
 
-	public Map() {
-		Random rand = new Random();
-		// Fill with random environment
+	public MapData() {
 		for (int x = 0; x < WIDTH; x++) {
 			for (int y = 0; y < HEIGHT; y++) {
-				rooms[x][y] = new Room(Environment.random(rand));
+				rooms[x][y] = new Room();
 			}
 		}
 		placeAltars();
@@ -25,7 +21,7 @@ public class Map {
 		int ix = x + OFFSET;
 		int iy = y + OFFSET;
 		if (ix < 0 || ix >= WIDTH || iy < 0 || iy >= HEIGHT) {
-			return new Room(Environment.EMPTY);
+			return null;
 		}
 		return rooms[ix][iy];
 	}

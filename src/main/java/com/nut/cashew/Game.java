@@ -7,102 +7,13 @@ import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOException;
 
-import java.util.Random;
-
-
 import org.jline.utils.InfoCmp.Capability;
 
 import java.util.*;
 
 public class Game {
-	static final int MAP_WIDTH = 101;
-	static final int MAP_HEIGHT = 101;
 	static final int VIEW_WIDTH = 21;
 	static final int VIEW_HEIGHT = 11;
-
-	enum Environment {
-		GRASS('.', "\u001B[32m"),
-		WATER('~', "\u001B[34m");
-
-		final char symbol;
-		final String color;
-
-		Environment(char symbol, String color) {
-			this.symbol = symbol;
-			this.color = color;
-		}
-	}
-
-	static class Room {
-		final Environment env;
-		final int altarLevel;
-
-		Room(Environment env, int altarLevel) {
-			this.env = env;
-			this.altarLevel = altarLevel;
-		}
-
-		String render() {
-			return env.color + (altarLevel > 0 ? Integer.toString(altarLevel) : String.valueOf(env.symbol)) + "\u001B[0m";
-		}
-	}
-
-	static class MapData {
-		final Room[][] rooms = new Room[MAP_WIDTH][MAP_HEIGHT];
-
-		MapData() {
-			Random rand = new Random();
-			for (int y = 0; y < MAP_HEIGHT; y++) {
-				for (int x = 0; x < MAP_WIDTH; x++) {
-					Environment env = rand.nextBoolean() ? Environment.GRASS : Environment.WATER;
-					rooms[x][y] = new Room(env, 0);
-				}
-			}
-
-			placeAltars();
-		}
-
-		void placeAltars() {
-			int[] dx = { -1, 0, 1 };
-			for (int level = 5; level >= 1; level--) {
-				int radius = (6 - level) * 10;
-				int count = level * 4;
-				double angleStep = 2 * Math.PI / count;
-				for (int i = 0; i < count; i++) {
-					int x = MAP_WIDTH / 2 + (int) (radius * Math.cos(i * angleStep));
-					int y = MAP_HEIGHT / 2 + (int) (radius * Math.sin(i * angleStep));
-					if (inBounds(x, y)) {
-						rooms[x][y] = new Room(Environment.GRASS, level);
-					}
-				}
-			}
-			rooms[MAP_WIDTH / 2][MAP_HEIGHT / 2] = new Room(Environment.GRASS, 5); // center altar
-		}
-
-		boolean inBounds(int x, int y) {
-			return x >= 0 && y >= 0 && x < MAP_WIDTH && y < MAP_HEIGHT;
-		}
-
-		Room getRoom(int x, int y) {
-			return inBounds(x, y) ? rooms[x][y] : new Room(Environment.GRASS, 0);
-		}
-	}
-
-	static class Player {
-		int x, y;
-
-		Player(MapData map) {
-			Random rand = new Random();
-			int border = MAP_WIDTH / 2;
-			while (true) {
-				x = rand.nextInt(MAP_WIDTH);
-				y = rand.nextInt(MAP_HEIGHT);
-				int dist = Math.max(Math.abs(x - border), Math.abs(y - border));
-				if (dist >= 40) break;
-			}
-		}
-	}
-
 	public static void main(String[] args) throws IOException {
 		Terminal terminal = TerminalBuilder.terminal();
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
@@ -117,15 +28,17 @@ public class Game {
 			terminal.flush();
 
 			// Top panel - Map
-			int startX = player.x - VIEW_WIDTH / 2;
-			int startY = player.y - VIEW_HEIGHT / 2;
+			int startX = player.getX() - VIEW_WIDTH / 2;
+			int startY = player.getY() - VIEW_HEIGHT / 2;
 
 			for (int y = 0; y < VIEW_HEIGHT; y++) {
 				for (int x = 0; x < VIEW_WIDTH; x++) {
 					int mapX = startX + x;
 					int mapY = startY + y;
-					if (mapX == player.x && mapY == player.y) {
+					if (mapX == player.getX() && mapY == player.getY()) {
 						terminal.writer().print("@");
+					} else if (map.getRoom(mapX, mapY) == null) {
+						terminal.writer().print(" ");
 					} else {
 						terminal.writer().print(map.getRoom(mapX, mapY).render());
 					}
@@ -134,7 +47,7 @@ public class Game {
 			}
 
 			// Middle panel - Messages
-			terminal.writer().println("╭─ Messages ────────────────────────╮");
+			terminal.writer().println("╭─ Messages ─────────────────────────────╮");
 			List<String> recent = new ArrayList<>(messages);
 			int msgDisplay = Math.min(5, recent.size());
 			for (int i = recent.size() - msgDisplay; i < recent.size(); i++) {
@@ -143,7 +56,7 @@ public class Game {
 			for (int i = msgDisplay; i < 5; i++) {
 				terminal.writer().println("│");
 			}
-			terminal.writer().println("╰───────────────────────────────────╯");
+			terminal.writer().println("╰────────────────────────────────────────╯");
 
 			// Bottom panel - Input
 			String line = reader.readLine("> ");
@@ -159,8 +72,8 @@ public class Game {
 			}
 
 			Room room = map.getRoom(player.x, player.y);
-			if (room.altarLevel > 0) {
-				messages.add("You see an altar of level " + room.altarLevel + " at (" + player.x + "," + player.y + ")");
+			if (room.getAltar() != null && room.getAltar().level > 0) {
+				messages.add("You see an altar of level " + room.getAltar().level + " at (" + player.x + "," + player.y + ")");
 			}
 
 			// Keep message queue size small

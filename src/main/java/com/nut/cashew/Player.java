@@ -3,10 +3,11 @@ package com.nut.cashew;
 import java.util.Random;
 
 public class Player {
-	private int x;
-	private int y;
+	public int x;
+	public int y;
 
-	public Player(Map map, Random rand) {
+	public Player(MapData map) {
+		Random rand = new Random();
 		while (true) {
 			double angle = rand.nextDouble() * 2 * Math.PI;
 			int radius = 40 + rand.nextInt(11); // 40–50
@@ -24,7 +25,7 @@ public class Player {
 	public int getX() { return x; }
 	public int getY() { return y; }
 
-	public void move(int dx, int dy, Map map) {
+	public void move(int dx, int dy, MapData map) {
 		int newX = x + dx;
 		int newY = y + dy;
 		if (map.inBounds(newX, newY)) {

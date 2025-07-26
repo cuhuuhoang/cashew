@@ -1,16 +1,7 @@
 package com.nut.cashew;
 
 public class Room {
-	private final Environment environment;
 	private Altar altar;
-
-	public Room(Environment environment) {
-		this.environment = environment;
-	}
-
-	public Environment getEnvironment() {
-		return environment;
-	}
 
 	public void setAltar(Altar altar) {
 		this.altar = altar;
@@ -31,6 +22,6 @@ public class Room {
 				default -> "A";
 			};
 		}
-		return environment.coloredSymbol();
+		return "\u001B[32m.\u001B[0m";
 	}
 }
