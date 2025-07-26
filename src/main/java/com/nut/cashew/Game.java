@@ -12,8 +12,15 @@ import org.jline.utils.InfoCmp.Capability;
 import java.util.*;
 
 public class Game {
+	static final int FULL_WIDTH = 49;
+	static final int FULL_HEIGHT = 14;
+
 	static final int VIEW_WIDTH = 21;
-	static final int VIEW_HEIGHT = 11;
+	static final int VIEW_HEIGHT = FULL_HEIGHT - 3;
+
+	private static String topBorder(String name, int width) {
+		return "╭─ " + name + " " + "─".repeat(width - name.length() - 5) + "╮";
+	}
 	public static void main(String[] args) throws IOException {
 		Terminal terminal = TerminalBuilder.terminal();
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
@@ -28,7 +35,7 @@ public class Game {
 			terminal.flush();
 
 			// Top panel - Map
-			terminal.writer().println("╭─ Map ─────────────────────────────╮");
+			terminal.writer().println(topBorder("Map", VIEW_WIDTH));
 			int startX = player.getX() - VIEW_WIDTH / 2;
 			int startY = player.getY() - VIEW_HEIGHT / 2;
 
@@ -63,6 +70,7 @@ public class Game {
 //			}
 //			terminal.writer().println("╰───────────────────────────────────────────────╯");
 
+			// full width 49
 			// Bottom panel - Input
 			String line = reader.readLine("> ");
 			if (line == null) continue;
