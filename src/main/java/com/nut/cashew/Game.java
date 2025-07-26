@@ -50,7 +50,7 @@ public class Game {
 				for (int x = 0; x < LEFT_WIDTH; x++) {
 					int mapX = startX + x;
 					int mapY = startY + y;
-					if (mapX == player.getX() && mapY == player.getY()) {
+					if (mapX == player .getX() && mapY == player.getY()) {
 						sb.append("@");
 					} else if (map.getRoom(mapX, mapY) == null) {
 						sb.append(" ");
