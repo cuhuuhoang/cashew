@@ -3,6 +3,7 @@ package com.nut.cashew;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static com.nut.cashew.BoxHelper.bottomBorder;
 import static com.nut.cashew.BoxHelper.topBorder;
@@ -20,14 +21,50 @@ public class MessageBox {
 		this.messages = new LinkedList<>();
 	}
 
+	private static final Pattern ANSI_PATTERN = Pattern.compile("\u001B\\[[;\\d]*m");
+
 	public void addMessage(String message) {
-		if (message.length() > width) {
-			messages.add(message.substring(0, width));
-			addMessage("-" + message.substring(width));
+		String stripped = stripAnsi(message);
+		if (stripped.length() > width) {
+			int cutIndex = findCutIndex(message, width);
+			messages.add(padRight(message.substring(0, cutIndex), width));
+			addMessage("-" + message.substring(cutIndex));
 		} else {
-			messages.add(message + " ".repeat(width - message.length()));
+			messages.add(padRight(message, width));
 		}
 	}
+
+	private String stripAnsi(String input) {
+		return ANSI_PATTERN.matcher(input).replaceAll("");
+	}
+
+	private int findCutIndex(String input, int visibleWidth) {
+		int visibleCount = 0;
+		int index = 0;
+		boolean inAnsi = false;
+
+		while (index < input.length() && visibleCount < visibleWidth) {
+			char c = input.charAt(index);
+			if (c == '\u001B') {
+				inAnsi = true;
+			}
+			if (!inAnsi) {
+				visibleCount++;
+			}
+			if (inAnsi && c == 'm') {
+				inAnsi = false;
+			}
+			index++;
+		}
+		return index;
+	}
+
+	private String padRight(String input, int targetVisibleLength) {
+		String stripped = stripAnsi(input);
+		int padLength = targetVisibleLength - stripped.length();
+		return input + " ".repeat(Math.max(0, padLength));
+	}
+
 
 	public void clear() {
 		messages.clear();
@@ -51,5 +88,9 @@ public class MessageBox {
 		}
 		result.add(bottomBorder(width));
 		return result;
+	}
+
+	public boolean isEmpty() {
+		return messages.isEmpty();
 	}
 }

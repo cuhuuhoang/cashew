@@ -1,5 +1,6 @@
 package com.nut.cashew;
 
+import org.javatuples.Pair;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
@@ -10,108 +11,72 @@ import java.io.IOException;
 import org.jline.utils.InfoCmp.Capability;
 
 import java.util.*;
-
-import static com.nut.cashew.BoxHelper.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Game {
-	static final int FULL_WIDTH = 49;
-	static final int FULL_HEIGHT = 14;
-
-	static final int LEFT_WIDTH = 21;
-	static final int RIGHT_WIDTH = FULL_WIDTH - LEFT_WIDTH - 4;
-	static final int MAP_HEIGHT = FULL_HEIGHT - 3;
 
 	public static void main(String[] args) throws IOException {
 		Terminal terminal = TerminalBuilder.terminal();
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
 		terminal.enterRawMode();
 
-		MessageBox messageBox = new MessageBox("Messages", RIGHT_WIDTH, 4);
-		MessageBox coordsBox = new MessageBox("Coordinates", RIGHT_WIDTH, 1);
-		MessageBox lookBox = new MessageBox("Look", RIGHT_WIDTH, 2);
-
 		MapData map = new MapData();
-		Player player = new Player(map, coordsBox, lookBox);
+		PlayerSet playerSet = new PlayerSet(map);
 
 		while (true) {
+			Player player = playerSet.getCurPlayer();
+			List<String> screenBox = player.box();
 			terminal.puts(Capability.clear_screen);
+			screenBox.forEach(s -> terminal.writer().println(s));
 			terminal.flush();
-			
-			List<String> leftPanel = new ArrayList<>();
 
-			// Top panel - Map
-			leftPanel.add(topBorder("Map", LEFT_WIDTH));
-			int startX = player.getX() - LEFT_WIDTH / 2;
-			int startY = player.getY() - MAP_HEIGHT / 2;
+			if (player.notHasAction()) {
+				String line = reader.readLine("> ");
+				if (line == null || line.trim().isEmpty()) continue;
+				if (line.trim().equalsIgnoreCase("quit")) break;
 
-			for (int y = 0; y < MAP_HEIGHT; y++) {
-				StringBuilder sb = new StringBuilder();
-				sb.append("│");
-				for (int x = 0; x < LEFT_WIDTH; x++) {
-					int mapX = startX + x;
-					int mapY = startY + y;
-					if (mapX == player .getX() && mapY == player.getY()) {
-						sb.append("@");
-					} else if (map.getRoom(mapX, mapY) == null) {
-						sb.append(" ");
-					} else {
-						sb.append(map.getRoom(mapX, mapY).render());
+				String command = line.trim();
+				List<Pair<Integer, String>> pairs = parsePairs(command);
+				if (pairs.size() == 1) {
+					int num = pairs.get(0).getValue0();
+					String action = pairs.get(0).getValue1();
+					if ("p".equals(action)) {
+						playerSet.setCurPlayer(num);
+						continue;
 					}
 				}
-				sb.append("│");
-				leftPanel.add(sb.toString());
+				pairs.forEach(p -> {
+					for (int i = 0; i < p.getValue0(); i++) {
+						player.addAction(p.getValue1());
+					}
+				});
 			}
-			leftPanel.add(bottomBorder(LEFT_WIDTH));
-
-			List<String> rightPanel = new LinkedList<>();
-			rightPanel.addAll(messageBox.box());
-			rightPanel.addAll(coordsBox.box());
-			rightPanel.addAll(lookBox.box());
-			// Middle panel - Messages
-
-			// Print combined panels
-			for (int i = 0; i < leftPanel.size(); i++) {
-				terminal.writer().print(leftPanel.get(i));
-				if (i < rightPanel.size()) {
-					terminal.writer().print(rightPanel.get(i));
-				}
-				terminal.writer().println();
-			}
-			terminal.flush();
-
-			// full width 49
-			// Bottom panel - Input
-			String line = reader.readLine("> ");
-			if (line == null) continue;
-			if (line.trim().equalsIgnoreCase("quit")) break;
-
-			String command = line.trim();
-			if (command.matches("\\d+[hjkl]")) {
-				int steps = Integer.parseInt(command.substring(0, command.length() - 1));
-				char direction = command.charAt(command.length() - 1);
-				switch (direction) {
-					case 'h' -> player.move(-steps, 0, map);
-					case 'j' -> player.move(0, steps, map);
-					case 'k' -> player.move(0, -steps, map);
-					case 'l' -> player.move(steps, 0, map);
-				}
-			} else {
-				switch (command) {
-					case "h" -> player.move(-1, 0, map);
-					case "j" -> player.move(0, 1, map);
-					case "k" -> player.move(0, -1, map);
-					case "l" -> player.move(1, 0, map);
-					default -> messageBox.addMessage("Unknown command: " + line);
-				}
-			}
-
-
-			// Keep message queue size small
-//			while (messages.size() > 50) messages.removeFirst();
+			// do action for all players (AI included)
+			playerSet.doAction();
 		}
 
 		terminal.writer().println("Goodbye!");
 		terminal.flush();
 		terminal.close();
+	}
+
+	public static List<Pair<Integer, String>> parsePairs(String input) {
+		List<Pair<Integer, String>> result = new ArrayList<>();
+
+		// Case: input starts with letter — treat as 1 + full string
+		if (!Character.isDigit(input.charAt(0))) {
+			result.add(new Pair<>(1, input));
+			return result;
+		}
+
+		Matcher m = Pattern.compile("(\\d+)([^\\d]+)").matcher(input);
+		while (m.find()) {
+			int number = Integer.parseInt(m.group(1));
+			String text = m.group(2);
+			result.add(new Pair<>(number, text));
+		}
+
+		return result;
 	}
 }

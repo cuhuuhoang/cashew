@@ -1,7 +1,15 @@
 package com.nut.cashew;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Room {
 	private Altar altar;
+	private final List<Player> players;
+
+	public Room() {
+		this.players = new ArrayList<>();
+	}
 
 	public void setAltar(Altar altar) {
 		this.altar = altar;
@@ -11,7 +19,7 @@ public class Room {
 		return altar;
 	}
 
-	public String render() {
+	public String render(Player player) {
 		if (altar != null) {
 			return switch (altar.level) {
 				case 5 -> "\u001B[35mA\u001B[0m"; // Magenta
@@ -22,6 +30,26 @@ public class Room {
 				default -> "A";
 			};
 		}
+		if (players.contains(player)) {
+			return "@";
+		}
+		for (Player p : players) {
+			if (p != player) {
+				return "\u001B[31m@\u001B[0m";
+			}
+		}
 		return "\u001B[32m.\u001B[0m";
+	}
+
+	public void addPlayer(Player player) {
+		players.add(player);
+	}
+
+	public void removePlayer(Player player) {
+		players.remove(player);
+	}
+
+	public List<Player> getPlayers() {
+		return players;
 	}
 }

@@ -1,16 +1,16 @@
 package com.nut.cashew;
 
 
-public class MapData {
-	public static final int WIDTH = 101;
-	public static final int HEIGHT = 101;
-	public static final int OFFSET = WIDTH / 2;
+import static com.nut.cashew.Const.*;
 
-	private final Room[][] rooms = new Room[WIDTH][HEIGHT];
+public class MapData {
+	public static final int OFFSET = MAP_FULL_WIDTH / 2;
+
+	private final Room[][] rooms = new Room[MAP_FULL_WIDTH][MAP_FULL_HEIGHT];
 
 	public MapData() {
-		for (int x = 0; x < WIDTH; x++) {
-			for (int y = 0; y < HEIGHT; y++) {
+		for (int x = 0; x < MAP_FULL_WIDTH; x++) {
+			for (int y = 0; y < MAP_FULL_HEIGHT; y++) {
 				rooms[x][y] = new Room();
 			}
 		}
@@ -20,7 +20,7 @@ public class MapData {
 	public Room getRoom(int x, int y) {
 		int ix = x + OFFSET;
 		int iy = y + OFFSET;
-		if (ix < 0 || ix >= WIDTH || iy < 0 || iy >= HEIGHT) {
+		if (ix < 0 || ix >= MAP_FULL_WIDTH || iy < 0 || iy >= MAP_FULL_HEIGHT) {
 			return null;
 		}
 		return rooms[ix][iy];
@@ -67,7 +67,7 @@ public class MapData {
 	public boolean inBounds(int x, int y) {
 		int ix = x + OFFSET;
 		int iy = y + OFFSET;
-		return ix >= 0 && ix < WIDTH && iy >= 0 && iy < HEIGHT;
+		return ix >= 0 && ix < MAP_FULL_WIDTH && iy >= 0 && iy < MAP_FULL_HEIGHT;
 	}
 
 }
