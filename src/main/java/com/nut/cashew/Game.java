@@ -16,44 +16,54 @@ import java.util.regex.Pattern;
 
 public class Game {
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, InterruptedException {
 		Terminal terminal = TerminalBuilder.terminal();
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
 		terminal.enterRawMode();
 
 		MapData map = new MapData();
 		PlayerSet playerSet = new PlayerSet(map);
+		int autoTurnCount = 0;
 
 		while (true) {
+
+			// print current user
 			Player player = playerSet.getCurPlayer();
-			List<String> screenBox = player.box();
+			List<String> screenBox = player.box(playerSet);
 			terminal.puts(Capability.clear_screen);
 			screenBox.forEach(s -> terminal.writer().println(s));
+			if (autoTurnCount > 0) {
+				terminal.writer().println("Auto: " + autoTurnCount);
+			}
 			terminal.flush();
 
-			if (player.notHasAction()) {
+			if (player.notHasAction() && autoTurnCount-- <= 0) {
 				String line = reader.readLine("> ");
 				if (line == null || line.trim().isEmpty()) continue;
 				if (line.trim().equalsIgnoreCase("quit")) break;
 
 				String command = line.trim();
-				List<Pair<Integer, String>> pairs = parsePairs(command);
-				if (pairs.size() == 1) {
-					int num = pairs.get(0).getValue0();
-					String action = pairs.get(0).getValue1();
-					if ("p".equals(action)) {
-						playerSet.setCurPlayer(num);
-						continue;
-					}
+				Pair<Integer, String> pair = parseSinglePair(command);
+				int num = pair.getValue0();
+				String action = pair.getValue1();
+				if ("p".equals(action)) {
+					playerSet.setCurPlayer(num);
+					continue;
 				}
-				pairs.forEach(p -> {
-					for (int i = 0; i < p.getValue0(); i++) {
-						player.addAction(p.getValue1());
-					}
-				});
+				if ("a".equals(action)) {
+					autoTurnCount=num;
+					continue;
+				}
+				for (int i = 0; i < pair.getValue0(); i++) {
+					player.addAction(pair.getValue1());
+				}
 			}
 			// do action for all players (AI included)
 			playerSet.doAction();
+			//
+			Thread.sleep(300);
+			// start turn
+			playerSet.startTurn();
 		}
 
 		terminal.writer().println("Goodbye!");
@@ -61,22 +71,12 @@ public class Game {
 		terminal.close();
 	}
 
-	public static List<Pair<Integer, String>> parsePairs(String input) {
-		List<Pair<Integer, String>> result = new ArrayList<>();
-
-		// Case: input starts with letter — treat as 1 + full string
-		if (!Character.isDigit(input.charAt(0))) {
-			result.add(new Pair<>(1, input));
-			return result;
+	public static Pair<Integer, String> parseSinglePair(String input) {
+		Matcher m = Pattern.compile("^(\\d+)(.*)$").matcher(input);
+		if (m.matches()) {
+			return new Pair<>(Integer.parseInt(m.group(1)), m.group(2));
+		} else {
+			return new Pair<>(1, input);
 		}
-
-		Matcher m = Pattern.compile("(\\d+)([^\\d]+)").matcher(input);
-		while (m.find()) {
-			int number = Integer.parseInt(m.group(1));
-			String text = m.group(2);
-			result.add(new Pair<>(number, text));
-		}
-
-		return result;
 	}
 }

@@ -7,7 +7,12 @@ public class Room {
 	private Altar altar;
 	private final List<Player> players;
 
-	public Room() {
+	public final int x;
+	public final int y;
+
+	public Room(int x, int y) {
+		this.x = x;
+		this.y = y;
 		this.players = new ArrayList<>();
 	}
 

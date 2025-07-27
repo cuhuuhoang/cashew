@@ -1,6 +1,8 @@
 package com.nut.cashew;
 
 
+import org.javatuples.Pair;
+
 import static com.nut.cashew.Const.*;
 
 public class MapData {
@@ -8,10 +10,11 @@ public class MapData {
 
 	private final Room[][] rooms = new Room[MAP_FULL_WIDTH][MAP_FULL_HEIGHT];
 
+
 	public MapData() {
 		for (int x = 0; x < MAP_FULL_WIDTH; x++) {
 			for (int y = 0; y < MAP_FULL_HEIGHT; y++) {
-				rooms[x][y] = new Room();
+				rooms[x][y] = new Room(x - OFFSET, y - OFFSET);
 			}
 		}
 		placeAltars();
@@ -61,10 +64,21 @@ public class MapData {
 	}
 
 	private void placeAltar(int x, int y, int level) {
-		getRoom(x, y).setAltar(new Altar(level));
+		Room room = getRoom(x, y);
+		room.setAltar(new Altar(level, room));
 	}
 
-	public boolean inBounds(int x, int y) {
+	public Pair<Boolean, String> tryMove(Player player, int x, int y) {
+		if (!inMap(x, y)) {
+			return new Pair<>(false, "Out of map");
+		}
+		if (getRoom(x, y).getAltar() != null && player.power < getRoom(x, y).getAltar().entryPower()) {
+			return new Pair<>(false, "Not enough power");
+		}
+		return new Pair<>(true, "Moved " + x + "," + y);
+	}
+
+	private boolean inMap(int x, int y) {
 		int ix = x + OFFSET;
 		int iy = y + OFFSET;
 		return ix >= 0 && ix < MAP_FULL_WIDTH && iy >= 0 && iy < MAP_FULL_HEIGHT;

@@ -1,10 +1,13 @@
 package com.nut.cashew;
 
+import lombok.Getter;
+
 import java.util.List;
 
 import static com.nut.cashew.Const.*;
 
 public class ViewMap {
+	@Getter
 	private final Room[][] rooms;
 
 	private final Player player;
@@ -41,4 +44,5 @@ public class ViewMap {
 		}
 		return mapBox.box();
 	}
+
 }
