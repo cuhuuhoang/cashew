@@ -47,20 +47,28 @@ public class PlayerSet {
 			var player = sortedPlayers.get(i);
 			rankBox.addMessage(String.format("[%s]%s: %d (%.2f, %.2f)", player.alliance.name, player.name, player.power, player.crit, player.grow));
 		}
-		
+
 		allianceBox.clear();
 		var alliancePower = alliances.stream()
-				.map(alliance -> Map.entry(alliance,
-						players.stream()
-								.filter(p -> p.alliance.equals(alliance))
-								.mapToInt(p -> p.power)
-								.sum()))
-				.sorted((e1, e2) -> Integer.compare(e2.getValue(), e1.getValue()))
+				.map(alliance -> {
+					var alliancePlayers = players.stream()
+							.filter(p -> p.alliance.equals(alliance))
+							.collect(Collectors.toList());
+					var totalPower = alliancePlayers.stream().mapToInt(p -> p.power).sum();
+					var avgCrit = alliancePlayers.stream().mapToDouble(p -> p.crit).average().orElse(0);
+					var avgGrow = alliancePlayers.stream().mapToDouble(p -> p.grow).average().orElse(0);
+					return Map.entry(alliance, new Object[]{totalPower, avgCrit, avgGrow});
+				})
+				.sorted((e1, e2) -> Integer.compare((Integer) e2.getValue()[0], (Integer) e1.getValue()[0]))
 				.collect(Collectors.toList());
 
 		alliancePower.stream()
 				.limit(BOX_ALLIANCE_RANK_HEIGHT)
-				.forEach(entry -> allianceBox.addMessage(String.format("%s: %d", entry.getKey().name, entry.getValue())));
+				.forEach(entry -> allianceBox.addMessage(String.format("%s: %d (%.2f, %.2f)",
+						entry.getKey().name,
+						(Integer) entry.getValue()[0],
+						(Double) entry.getValue()[1],
+						(Double) entry.getValue()[2])));
 
 		infoBox.clear();
 		infoBox.addMessage("Turn: " + turnCount);

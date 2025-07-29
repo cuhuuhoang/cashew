@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.javatuples.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nut.cashew.Const.*;
 import static com.nut.cashew.Const.BOX_LOOK_HEIGHT;
@@ -39,9 +40,9 @@ public class Player {
 		this.map = map;
 		this.alliance = alliance;
 		this.aiController = new AiController(this);
-		this.messageBox = new MessageBox("Messages", COL_2_WIDTH, BOX_MESSAGES_HEIGHT);
+		this.messageBox = new MessageBox("Messages", BOX_MESSAGES_WIDTH, BOX_MESSAGES_HEIGHT);
 		this.coordsBox = new MessageBox("Coordinates", COL_2_WIDTH, BOX_COORDS_HEIGHT);
-		this.lookBox = new MessageBox("Look", COL_2_WIDTH, BOX_LOOK_HEIGHT);
+		this.lookBox = new MessageBox("Look", BOX_LOOK_WIDTH, BOX_LOOK_HEIGHT);
 		this.statsBox = new MessageBox("Stats", COL_2_WIDTH, BOX_STATS_HEIGHT);
 		this.nextAction = new ArrayDeque<>();
 		this.globalBox = globalBox;
@@ -272,43 +273,60 @@ public class Player {
 		}
 	}
 
-	public List<String> box(PlayerSet playerSet) {
-		List<String> firstPanel = new ArrayList<>(getViewMap().box());
-		playerSet.setRank();
-		//
-		List<String> secondPanel = new LinkedList<>();
-		secondPanel.addAll(messageBox.box());
-//		secondPanel.addAll(coordsBox.box());
-		secondPanel.addAll(lookBox.box());
-		secondPanel.addAll(playerSet.infoBox.box());
-		secondPanel.addAll(statsBox.box());
-		//
-		List<String> thirdPanel = new LinkedList<>();
-		thirdPanel.addAll(playerSet.rankBox.box());
-		thirdPanel.addAll(playerSet.allianceBox.box());
-		thirdPanel.addAll(globalBox.box());
-
-		// Print combined panels
+	public List<String> combineColumns(List<List<String>> lists) {
 		List<String> result = new LinkedList<>();
-		for (int i = 0; i < SCREEN_HEIGHT; i++) {
+		int maxHeight = lists.stream().mapToInt(List::size).max().orElse(0);
+		List<Integer> widthList = lists.stream().map(strings -> strings.get(0).length())
+				.collect(Collectors.toList());
+		for (int i = 0; i < maxHeight; i++) {
 			StringBuilder sb = new StringBuilder();
-			if (i < firstPanel.size()) {
-				sb.append(firstPanel.get(i));
-			} else {
-				sb.append(" ".repeat(MAP_VIEW_WIDTH + 2));
-			}
-			if (i < secondPanel.size()) {
-				sb.append(secondPanel.get(i));
-			} else {
-				sb.append(" ".repeat(COL_2_WIDTH + 2));
-			}
-			if (i < thirdPanel.size()) {
-				sb.append(thirdPanel.get(i));
-			} else {
-				sb.append(" ".repeat(COL_3_WIDTH + 2));
+			for (int j = 0; j < lists.size(); j++) {
+				List<String> list = lists.get(j);
+				if (i < list.size()) {
+					sb.append(list.get(i));
+				} else {
+					sb.append(" ".repeat(widthList.get(j)));
+				}
 			}
 			result.add(sb.toString());
 		}
+		return result;
+	}
+
+	public List<String> combineRows(List<List<String>> lists) {
+		List<String> result = new LinkedList<>();
+		int maxWidth = lists.stream().mapToInt(strings -> strings.get(0).length()).max().orElse(0);
+		for(List<String> list : lists) {
+			for (String s : list) {
+				StringBuilder sb = new StringBuilder();
+				sb.append(s);
+				int length = MessageBox.stripAnsi(s).length();
+				if (length < maxWidth) {
+					sb.append(" ".repeat(maxWidth - length));
+				}
+				result.add(sb.toString());
+			}
+		}
+		return result;
+	}
+
+	public List<String> box(PlayerSet playerSet) {
+		List<String> infoPanel = combineColumns(List.of(messageBox.box(), lookBox.box()));
+		List<String> firstCol = combineRows(List.of(infoPanel, getViewMap().box()));
+		//
+		playerSet.setRank();
+		//
+		List<String> secondCol = new LinkedList<>();
+		secondCol.addAll(globalBox.box());
+		secondCol.addAll(playerSet.infoBox.box());
+		secondCol.addAll(statsBox.box());
+		//
+		List<String> thirdCol = new LinkedList<>();
+		thirdCol.addAll(playerSet.rankBox.box());
+		thirdCol.addAll(playerSet.allianceBox.box());
+
+		// Print combined panels
+		List<String> result = combineColumns(List.of(firstCol, secondCol, thirdCol));
 		return result;
 	}
 }

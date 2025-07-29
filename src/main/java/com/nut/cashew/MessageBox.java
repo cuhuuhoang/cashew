@@ -1,7 +1,6 @@
 package com.nut.cashew;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,8 +28,8 @@ public class MessageBox {
 		String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
 		addMessage(String.format("%s: %s", time, message));
 	}
-
-	public void addMessage(String message) {
+	
+	private void addSubMessage(String message) {
 		String stripped = stripAnsi(message);
 		if (stripped.length() > width) {
 			int cutIndex = findCutIndex(message, width);
@@ -41,7 +40,16 @@ public class MessageBox {
 		}
 	}
 
-	private String stripAnsi(String input) {
+	private static final int MAX_MESSAGES = 100;
+
+	public void addMessage(String message) {
+		addSubMessage(message);
+		while (messages.size() > MAX_MESSAGES) {
+			messages.remove(0);
+		}
+	}
+
+	public static String stripAnsi(String input) {
 		return ANSI_PATTERN.matcher(input).replaceAll("");
 	}
 

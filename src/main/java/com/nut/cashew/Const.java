@@ -6,22 +6,23 @@ public class Const {
 	public static final int MAP_FULL_HEIGHT = 101;
 	//
 
-	public static final int SCREEN_WIDTH = 140;
-	public static final int SCREEN_HEIGHT = 35;
 
 	public static final int MAP_VIEW_WIDTH = 60;
 	public static final int MAP_VIEW_HEIGHT = 30;
 	public static final int COL_2_WIDTH = 40;
-	public static final int COL_3_WIDTH = SCREEN_WIDTH - MAP_VIEW_WIDTH - COL_2_WIDTH - 4;
+	public static final int COL_3_WIDTH = 40;
+
 
 	public static final int BOX_MESSAGES_HEIGHT = 6;
+	public static final int BOX_MESSAGES_WIDTH = 30;
 	public static final int BOX_COORDS_HEIGHT = 1;
 	public static final int BOX_INFO_HEIGHT = 2;
 	public static final int BOX_LOOK_HEIGHT = 6;
-	public static final int BOX_STATS_HEIGHT = 5;
-	public static final int BOX_GLOBAL_HEIGHT = 7;
-	public static final int BOX_RANK_HEIGHT = 15;
-	public static final int BOX_ALLIANCE_RANK_HEIGHT = 5;
+	public static final int BOX_LOOK_WIDTH = 28;
+	public static final int BOX_STATS_HEIGHT = 6;
+	public static final int BOX_GLOBAL_HEIGHT = 20;
+	public static final int BOX_RANK_HEIGHT = 20;
+	public static final int BOX_ALLIANCE_RANK_HEIGHT = 10;
 	//
 	public static final int TOTAL_PLAYER=100;
 	//
