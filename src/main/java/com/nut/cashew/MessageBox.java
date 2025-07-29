@@ -1,6 +1,8 @@
 package com.nut.cashew;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -22,6 +24,11 @@ public class MessageBox {
 	}
 
 	private static final Pattern ANSI_PATTERN = Pattern.compile("\u001B\\[[;\\d]*m");
+
+	public void addTimeMessage(String message) {
+		String time = new SimpleDateFormat("HH:mm:ss").format(new Date());
+		addMessage(String.format("%s: %s", time, message));
+	}
 
 	public void addMessage(String message) {
 		String stripped = stripAnsi(message);

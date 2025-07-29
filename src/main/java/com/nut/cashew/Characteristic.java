@@ -9,8 +9,10 @@ import lombok.Data;
 public class Characteristic {
 	double aggressive;
 	double crazy;
+	double careful;
 
 	public String toString() {
-		return String.format("agg: %.2f, crazy: %.2f", aggressive, crazy);
+		return String.format("Ag: %.2f, Cz: %.2f, Cf: %.2f",
+				aggressive, crazy, careful);
 	}
 }

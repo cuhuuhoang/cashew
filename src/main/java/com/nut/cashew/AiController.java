@@ -1,21 +1,50 @@
 package com.nut.cashew;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
+import org.javatuples.Pair;
+
+import static com.nut.cashew.Const.MAX_ALTAR_SAFE_LEVEL;
+
+// threadsafe
 public class AiController {
 	private double distance(int x1, int y1, int x2, int y2) {
 		return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 	}
 
 	private final Player player;
-
 	public AiController(Player player) {
 		this.player = player;
 	}
 
 	public String nextMove() {
-		ViewMap viewMap = player.getViewMap();
-		Room[][] rooms = viewMap.getRooms();
+		int g = Integer.parseInt(player.alliance.name.substring(1));
+
+		if (player.getCurrentRoom().getArena() != null && player.getMap().getArena().isOpen) {
+			player.message("AI: Arena Event");
+			return doCombat();
+		}
+
+		// treasure check
+		if (player.getCurrentRoom().getTreasure() != null) {
+			player.message("AI: Treasure");
+			return "treasure";
+		}
+
+		List<Room> treasureRooms = player.getMap().getTreasures().stream()
+				.map(t -> t.room).collect(Collectors.toList());
+		if (!treasureRooms.isEmpty()) {
+			Room bestRoom = nearestRoom(treasureRooms);
+			double distance = distance(bestRoom.x, bestRoom.y, player.getX(), player.getY());
+			if (distance < 20) {
+				player.message("AI: Treasure (" + bestRoom.x + "," + bestRoom.y + ")");
+				return moveTo(bestRoom);
+			}
+		}
+
+		Room[][] rooms = player.getMap().getRooms();
+
 		// list all altars
 		List<Altar> altars = new LinkedList<>();
 		for (Room[] value : rooms) {
@@ -26,52 +55,82 @@ public class AiController {
 			}
 		}
 		// filter available altars
-		altars.removeIf(a -> a.entryPower() > player.power);
-		int bestLevel = altars.stream().mapToInt(Altar::getLevel).max().orElse(0);
-		altars.removeIf(a -> a.level < bestLevel);
+		altars.removeIf(a -> {
+			if (!a.isOpen) return true;
+			if (a.level == 1) return false;
+			if (a.level <= MAX_ALTAR_SAFE_LEVEL) {
+				return a.entryPower() > player.power;
+			} else {
+				return a.entryPower() >
+						player.power / (1 + player.characteristic.careful);
+			}
+		});
+		if (player.getCurrentRoom().getAltar() != null) {
+			altars.add(player.getCurrentRoom().getAltar());
+		}
+
 		// if no altar
 		if (altars.isEmpty()) {
-			player.message("AI: No Altar, move 0,0");
-			return moveTo(0, 0);
+			player.message("AI: No Altar, respawn");
+			return "respawn";
 		}
-		// find nearest altar
-		List<Room> destinationRooms = new LinkedList<>();
-		for (Altar altar : altars) {
-			destinationRooms.add(altar.room);
+
+		// find best room
+		Room bestRoom = altars.stream()
+				.map(a -> {
+					boolean hasMe = a.room.getPlayers().stream().anyMatch(p -> p.name.equals(player.name));
+					int roomSize = a.room.getPlayers().size() + (hasMe ? 0 : 1);
+					double distance = Math.max(Math.sqrt(distance(a.room.x, a.room.y, player.getX(), player.getY())), 1);
+					double gain = Math.max((double) a.powerGain() / Math.max(roomSize, 1), 1);
+					double score = gain / distance;
+					return new Pair<>(a.room, score);
+				})
+				.max(Comparator.comparingDouble(Pair::getValue1))
+				.map(Pair::getValue0)
+				.orElseThrow();
+
+
+		player.message("AI: Altar" + bestRoom.getAltar().level + "(" + bestRoom.x + "," + bestRoom.y + ")");
+		if (bestRoom.x == player.getX() && bestRoom.y == player.getY()) {
+			player.message("AI: No need to move");
+			return doCombat();
 		}
-		Room nearestRoom = nearestRoom(destinationRooms);
-		if (nearestRoom != null) {
-			player.message("AI: Altar" + nearestRoom.getAltar().level);
-			if (nearestRoom.x == player.getX() && nearestRoom.y == player.getY()) {
-				player.message("AI: No need to move");
-				Random random = new Random();
-				if (player.getCurrentRoom().getPlayers().size() > 1) {
-					if (random.nextDouble() <= player.characteristic.aggressive) {
-						Player target;
-						if (random.nextDouble() <= player.characteristic.crazy) {
-							target = player.getCurrentRoom().getPlayers()
-									.stream()
-									.filter(p -> p != player)
-									.filter(p -> p.power > player.power)
-									.findFirst().orElse(null);
-						} else {
-							target = player.getCurrentRoom().getPlayers()
-									.stream()
-									.filter(p -> p != player)
-									.filter(p -> p.power <= player.power)
-									.findFirst().orElse(null);
-						}
-						if (target != null) {
-							player.message("AI: attack " + target.name);
-							return "attack " + target.name;
-						}
-					}
+		return moveTo(bestRoom);
+	}
+
+	public String doCombat() {
+		Random random = new Random();
+		if (player.getCurrentRoom().getPlayers().size() == 1) {
+			return "";
+		}
+		if (player.getCurrentRoom().getArena() != null ||
+				(player.getCurrentRoom().getAltar() != null &&
+				player.getCurrentRoom().getAltar().level > MAX_ALTAR_SAFE_LEVEL)) {
+			if (random.nextDouble() <= player.characteristic.aggressive) {
+				Player target = null;
+				if (random.nextDouble() <= player.characteristic.crazy) {
+					target = player.getCurrentRoom().getPlayers()
+							.stream()
+							.filter(p -> p != player)
+							.filter(p -> !p.alliance.name.equals(player.alliance.name))
+							.filter(p -> p.power > player.power)
+							.findFirst().orElse(null);
+				}
+				if (target == null){
+					target = player.getCurrentRoom().getPlayers()
+							.stream()
+							.filter(p -> p != player)
+							.filter(p -> !p.alliance.name.equals(player.alliance.name))
+							.filter(p -> p.power <= player.power)
+							.findFirst().orElse(null);
+				}
+				if (target != null) {
+					player.message("AI: attack " + target.name);
+					return "attack " + target.name;
 				}
 			}
-			return moveTo(nearestRoom);
 		}
-		player.message("AI: No idea, move 0,0");
-		return moveTo(0, 0);
+		return "";
 	}
 
 	public Room nearestRoom(List<Room> rooms) {
@@ -89,28 +148,28 @@ public class AiController {
 
 	public String moveTo(int x, int y) {
 		if (x > player.getX()) {
-			var r = player.tryMove(player.getX() + 1, player.getY());
+			var r = player.tryMove(player.getX() + 1, player.getY(), false);
 			if (!r.getValue0()) {
 				return "j";
 			}
 			return "l";
 		}
 		if (x < player.getX()) {
-			var r = player.tryMove(player.getX() - 1, player.getY());
+			var r = player.tryMove(player.getX() - 1, player.getY(), false);
 			if (!r.getValue0()) {
 				return "k";
 			}
 			return "h";
 		}
 		if (y > player.getY()) {
-			var r = player.tryMove(player.getX(), player.getY() + 1);
+			var r = player.tryMove(player.getX(), player.getY() + 1, false);
 			if (!r.getValue0()) {
 				return "l";
 			}
 			return "j";
 		}
 		if (y < player.getY()) {
-			var r = player.tryMove(player.getX(), player.getY() - 1);
+			var r = player.tryMove(player.getX(), player.getY() - 1, false);
 			if (!r.getValue0()) {
 				return "h";
 			}

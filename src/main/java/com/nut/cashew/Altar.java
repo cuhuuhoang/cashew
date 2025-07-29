@@ -7,14 +7,20 @@ public class Altar {
 	@Getter
 	public final int level;
 	public final Room room;
+	public boolean isOpen;
 
 	public Altar(int level, Room room) {
 		this.level = level;
 		this.room = room;
+		this.isOpen = level <= Const.MAX_ALTAR_SAFE_LEVEL;
 	}
 	
 	public int powerGain() {
-		return (int) Math.pow(level, 2) * 100;
+		if (level <= Const.MAX_ALTAR_SAFE_LEVEL) {
+			return (int) Math.pow(level, 3) * 100;
+		}
+		return (int) Math.pow(Const.MAX_ALTAR_SAFE_LEVEL,
+				level - Const.MAX_ALTAR_SAFE_LEVEL + 3) * 100;
 	}
 
 	public int entryPower() {
@@ -22,7 +28,7 @@ public class Altar {
 	}
 
 	public static int entryPower(int level) {
-		return (int) Math.pow(level, 4) * 100;
+		return (int) Math.pow(level, 5) * 100;
 	}
 
 }
