@@ -32,14 +32,6 @@ public class Room {
 
 	public String render(Player player) {
 		if (altar != null) {
-//			return switch (altar.level) {
-//				case 5 -> "\u001B[35mA\u001B[0m"; // Magenta
-//				case 4 -> "\u001B[31mA\u001B[0m"; // Red
-//				case 3 -> "\u001B[33mA\u001B[0m"; // Yellow
-//				case 2 -> "\u001B[36mA\u001B[0m"; // Cyan
-//				case 1 -> "\u001B[37mA\u001B[0m"; // White
-//				default -> "A";
-//			};
 			if (altar.level <= MAX_ALTAR_SAFE_LEVEL) {
 				return "\u001B[36m" + altar.level + "\u001B[0m";
 			}

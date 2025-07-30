@@ -9,6 +9,8 @@ import static com.nut.cashew.Const.MAX_ALTAR_SAFE_LEVEL;
 
 // threadsafe
 public class AiController {
+
+	int g;
 	private double distance(int x1, int y1, int x2, int y2) {
 		return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 	}
@@ -16,10 +18,11 @@ public class AiController {
 	private final Player player;
 	public AiController(Player player) {
 		this.player = player;
+		 g = Integer.parseInt(player.alliance.name.substring(1));
 	}
 
 	public String nextMove() {
-		int g = Integer.parseInt(player.alliance.name.substring(1));
+		
 
 		if (player.getCurrentRoom().getArena() != null && player.getMap().getArena().isOpen) {
 			player.message("AI: Arena Event");
@@ -109,20 +112,36 @@ public class AiController {
 			if (random.nextDouble() <= player.characteristic.aggressive) {
 				Player target = null;
 				if (random.nextDouble() <= player.characteristic.crazy) {
-					target = player.getCurrentRoom().getPlayers()
-							.stream()
+					target = player.getCurrentRoom().getPlayers().stream()
 							.filter(p -> p != player)
 							.filter(p -> !p.alliance.name.equals(player.alliance.name))
-							.filter(p -> p.power > player.power)
-							.findFirst().orElse(null);
+							.collect(Collectors.groupingBy(p -> p.alliance.name))
+							.entrySet().stream()
+							.map(entry -> Map.entry(entry.getKey(),
+									entry.getValue().stream()
+											.mapToDouble(p -> p.power * p.crit).sum()))
+							.max(Map.Entry.comparingByValue())
+							.map(entry -> player.getCurrentRoom().getPlayers().stream()
+									.filter(p -> p.alliance.name.equals(entry.getKey()))
+									.max(Comparator.comparingDouble(p -> p.power * p.crit)))
+							.flatMap(p -> p)
+							.orElse(null);
 				}
 				if (target == null){
-					target = player.getCurrentRoom().getPlayers()
-							.stream()
+					target = player.getCurrentRoom().getPlayers().stream()
 							.filter(p -> p != player)
 							.filter(p -> !p.alliance.name.equals(player.alliance.name))
-							.filter(p -> p.power <= player.power)
-							.findFirst().orElse(null);
+							.collect(Collectors.groupingBy(p -> p.alliance.name))
+							.entrySet().stream()
+							.map(entry -> Map.entry(entry.getKey(),
+									entry.getValue().stream()
+											.mapToDouble(p -> p.power * p.crit).sum()))
+							.min(Map.Entry.comparingByValue())
+							.map(entry -> player.getCurrentRoom().getPlayers().stream()
+									.filter(p -> p.alliance.name.equals(entry.getKey()))
+									.min(Comparator.comparingDouble(p -> p.power * p.crit)))
+							.flatMap(p -> p)
+							.orElse(null);
 				}
 				if (target != null) {
 					player.message("AI: attack " + target.name);
