@@ -36,7 +36,7 @@ public class EventController {
 	public void eventCheck() {
 
 		turnCount++;
-		for (Altar altar : map.getAltars()) {
+		for (Altar altar : map.altars) {
 			int sharePlayers = 0;
 			for (Player player : altar.room.getPlayers()) {
 				if (altar.players.contains(player.name)) {
@@ -70,8 +70,8 @@ public class EventController {
 		}
 
 		if (turnCount > 0 && turnCount % ARENA_INTERVAL == 0) {
-			povRoom = map.getArena().room;
-			map.getArena().isOpen = true;
+			povRoom = map.arena.room;
+			map.arena.isOpen = true;
 			players.forEach(p -> {
 				if (p.power >= MIN_ARENA_POWER) {
 					p.moveToArena();
@@ -79,9 +79,9 @@ public class EventController {
 			});
 		}
 
-		if (map.getArena().isOpen) {
+		if (map.arena.isOpen) {
 			Set<String> alliances = new HashSet<>();
-			List<Player> roomPlayers = List.copyOf(map.getArena().room.getPlayers());
+			List<Player> roomPlayers = List.copyOf(map.arena.room.getPlayers());
 			for (Player p : roomPlayers) {
 				if (p.power < MIN_ARENA_POWER) {
 					p.respawn();
@@ -91,7 +91,7 @@ public class EventController {
 			}
 			if (alliances.size() == 1) {
 				screenRender.globalBox.addTimeMessage("Arena Winner: " + alliances.iterator().next());
-				map.getArena().isOpen = false;
+				map.arena.isOpen = false;
 				players.forEach(p -> {
 					if (alliances.contains(p.alliance.name)) {
 						p.grow += 0.1;
@@ -103,14 +103,14 @@ public class EventController {
 						}
 					}
 				});
-				List<Player> remainPlayers = List.copyOf(map.getArena().room.getPlayers());
+				List<Player> remainPlayers = List.copyOf(map.arena.room.getPlayers());
 				for (Player p : remainPlayers) {
 					p.grow += 0.1;
 					p.respawn();
 				}
 			} else if (alliances.isEmpty()) {
-				map.getArena().isOpen = false;
-				if (!map.getArena().room.getPlayers().isEmpty()) {
+				map.arena.isOpen = false;
+				if (!map.arena.room.getPlayers().isEmpty()) {
 					throw new RuntimeException("Arena room is not empty");
 				}
 				screenRender.globalBox.addMessage("Arena No Alliance Win");
@@ -127,7 +127,7 @@ public class EventController {
 				if (turnCount % sessionLength == altarSkipTurn + i * altarInterval) {
 					// time to open altar level, MAX_ALTAR_SAFE_LEVEL + 1 + i
 					int finalI = i;
-					map.getAltars().forEach(altar -> {
+					map.altars.forEach(altar -> {
 						if (altar.level == MAX_ALTAR_SAFE_LEVEL + finalI) {
 							if (altar.isOpen) throw new RuntimeException("Altar is already open");
 							altar.isOpen = true;
@@ -146,7 +146,7 @@ public class EventController {
 		if (turnCount > 0 && turnCount % sessionLength == 0) {
 			for (int i = MAX_ALTAR_SAFE_LEVEL + 1  ; i <= MAX_ALTAR_LEVEL ; i++) {
 				int finalI = i;
-				map.getAltars().forEach(altar -> {
+				map.altars.forEach(altar -> {
 					if (altar.level == finalI) {
 						List<Player> players = List.copyOf(altar.room.getPlayers());
 						altar.isOpen = false;
@@ -164,7 +164,7 @@ public class EventController {
 
 		infoBox.clear();
 		infoBox.addMessage("Turn: " + turnCount);
-		if (map.getArena().isOpen) {
+		if (map.arena.isOpen) {
 			infoBox.addMessage("In Arena Event");
 		}
 	}

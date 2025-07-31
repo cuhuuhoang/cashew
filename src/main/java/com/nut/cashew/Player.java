@@ -20,8 +20,7 @@ public class Player {
 	public final MessageBox messageBox;
 	public final MessageBox globalBox;
 	public final String name;
-	@Getter
-	private final MapData map;
+	public final MapData map;
 	public final AiController aiController;
 	public final Queue<String> nextAction;
 	@Getter
@@ -78,17 +77,17 @@ public class Player {
 		if (!map.inMap(x, y)) {
 			return new Pair<>(false, "Out of map");
 		}
-		if (map.getRoom(x, y).getAltar() != null && power < map.getRoom(x, y).getAltar().entryPower()) {
+		if (map.getRoom(x, y).altar != null && power < map.getRoom(x, y).altar.entryPower()) {
 			return new Pair<>(false, "Not enough power");
 		}
-		if (map.getRoom(x, y).getAltar() != null && !map.getRoom(x, y).getAltar().isOpen) {
+		if (map.getRoom(x, y).altar != null && !map.getRoom(x, y).altar.isOpen) {
 			return new Pair<>(false, "Altar is closed");
 		}
-		if (map.getRoom(x, y).getArena() != null) {
+		if (map.getRoom(x, y).arena != null) {
 			return new Pair<>(false, "Can not move to Arena");
 		}
 		if (!respawn) {
-			if (map.getRoom(x, y).getArena() != null && map.getArena().isOpen) {
+			if (map.getRoom(x, y).arena != null && map.arena.isOpen) {
 				return new Pair<>(false, "Can not move out of Arena");
 			}
 		}
@@ -96,7 +95,7 @@ public class Player {
 	}
 
 	public void moveToArena() {
-		Room room = map.getArena().room;
+		Room room = map.arena.room;
 		moveNoCheck(room.x, room.y);
 	}
 
@@ -119,14 +118,14 @@ public class Player {
 	}
 
 	public void attack(String targetName) {
-		if (map.getRoom(x, y).getBoss() != null && "boss".equalsIgnoreCase(targetName) ) {
+		if (map.getRoom(x, y).boss != null && "boss".equalsIgnoreCase(targetName) ) {
 			double dame = power * crit;
-			Boss boss = map.getRoom(x, y).getBoss();
+			Boss boss = map.getRoom(x, y).boss;
 			if (dame >= boss.power) {
 				grow += boss.reward;
 				grow += 0.05;
-				map.getBosses().remove(boss);
-				boss.room.setBoss(null);
+				map.bosses.remove(boss);
+				boss.room.boss = null;
 			} else {
 				double reward = boss.reward * dame / boss.power;
 				grow += reward;
@@ -135,11 +134,11 @@ public class Player {
 				message("attacked boss, gain " + String.format("%.2f", reward));
 			}
 		}
-		if (map.getRoom(x, y).getAltar() == null && map.getRoom(x, y).getArena() == null) {
+		if (map.getRoom(x, y).altar == null && map.getRoom(x, y).arena == null) {
 			message("Can not attack open field");
 			return;
 		}
-		if (map.getRoom(x, y).getAltar() != null && map.getRoom(x,y).getAltar().level <= MAX_ALTAR_SAFE_LEVEL) {
+		if (map.getRoom(x, y).altar != null && map.getRoom(x,y).altar.level <= MAX_ALTAR_SAFE_LEVEL) {
 			message("Can not attack at safe altar");
 			return;
 		}
@@ -150,12 +149,12 @@ public class Player {
 					return;
 				}
 				double damage = Math.min(target.power / target.crit, power / crit);
-				if (getCurrentRoom().getArena() == null) {
+				if (getCurrentRoom().arena == null) {
 					this.power -= Math.min((int) (damage * target.crit), power);
 				}
 				target.power -= Math.min((int) (damage * crit), target.power);
-				if (getCurrentRoom().getAltar() != null && getCurrentRoom().getAltar().level > MAX_ALTAR_SAFE_LEVEL) {
-					int altarLevel = getCurrentRoom().getAltar().level;
+				if (getCurrentRoom().altar != null && getCurrentRoom().altar.level > MAX_ALTAR_SAFE_LEVEL) {
+					int altarLevel = getCurrentRoom().altar.level;
 					double critIncrease = (double) altarLevel * altarLevel / 100;
 					crit += critIncrease;
 					target.crit += critIncrease;
@@ -172,8 +171,8 @@ public class Player {
 
 	public void sit() {
 		message("Sit");
-		if (getCurrentRoom().getAltar() != null) {
-			getCurrentRoom().getAltar().players.add(name);
+		if (getCurrentRoom().altar != null) {
+			getCurrentRoom().altar.players.add(name);
 		}
 	}
 
@@ -183,11 +182,11 @@ public class Player {
 
 	public void takeTreasure() {
 		Room room = map.getRoom(x, y);
-		if (room.getTreasure() != null) {
-			Treasure treasure = room.getTreasure();
+		if (room.treasure != null) {
+			Treasure treasure = room.treasure;
 			double reward = treasure.reward;
-			map.getTreasures().remove(treasure);
-			room.setTreasure(null);
+			map.treasures.remove(treasure);
+			room.treasure = null;
 			message("Take treasure " + String.format("%.2f", reward));
 //			globalBox.addMessage(getFullName() + " takes treasure " + String.format("%.2f", reward));
 			grow += reward;
@@ -203,8 +202,8 @@ public class Player {
 			power = 100;
 			respawn();
 		}
-		if (room.getAltar() != null && room.getAltar().level > 0) {
-			if (power < room.getAltar().entryPower()) {
+		if (room.altar != null && room.altar.level > 0) {
+			if (power < room.altar.entryPower()) {
 				respawn();
 			}
 		}

@@ -24,25 +24,28 @@ public class AiController {
 
 	public String nextMove() {
 		
+		MapData map = player.map;
+		Room curRoom = player.getCurrentRoom();
 
-		if (player.getCurrentRoom().getArena() != null && player.getMap().getArena().isOpen) {
+		// arena
+		if (curRoom.arena != null && map.arena.isOpen) {
 			player.message("AI: Arena Event");
 			return doCombat();
 		}
 
 		// treasure check
-		if (player.getCurrentRoom().getTreasure() != null) {
+		if (curRoom.treasure != null) {
 			player.message("AI: Treasure");
 			return "treasure";
 		}
 
 		// boss check
-		if (player.getCurrentRoom().getBoss() != null) {
+		if (curRoom.boss != null) {
 			player.message("AI: Boss");
 			return "attack boss";
 		}
 
-		List<Room> treasureRooms = player.getMap().getTreasures().stream()
+		List<Room> treasureRooms = map.treasures.stream()
 				.map(t -> t.room).collect(Collectors.toList());
 		if (!treasureRooms.isEmpty()) {
 			Room bestRoom = nearestRoom(treasureRooms);
@@ -53,7 +56,7 @@ public class AiController {
 			}
 		}
 
-		List<Room> bossRooms = player.getMap().getBosses().stream()
+		List<Room> bossRooms = map.bosses.stream()
 				.map(b -> b.room).collect(Collectors.toList());
 		if (!bossRooms.isEmpty()) {
 			Room bestRoom = nearestRoom(bossRooms);
@@ -64,14 +67,14 @@ public class AiController {
 			}
 		}
 
-		Room[][] rooms = player.getMap().getRooms();
+		Room[][] rooms = map.getRooms();
 
 		// list all altars
 		List<Altar> altars = new LinkedList<>();
 		for (Room[] value : rooms) {
 			for (Room room : value) {
-				if (room != null && room.getAltar() != null) {
-					altars.add(room.getAltar());
+				if (room != null && room.altar != null) {
+					altars.add(room.altar);
 				}
 			}
 		}
@@ -86,8 +89,8 @@ public class AiController {
 						player.power / (1 + player.characteristic.careful);
 			}
 		});
-		if (player.getCurrentRoom().getAltar() != null) {
-			altars.add(player.getCurrentRoom().getAltar());
+		if (curRoom.altar != null) {
+			altars.add(curRoom.altar);
 		}
 
 		// if no altar
@@ -111,7 +114,7 @@ public class AiController {
 				.orElseThrow();
 
 
-		player.message("AI: Altar" + bestRoom.getAltar().level + "(" + bestRoom.x + "," + bestRoom.y + ")");
+		player.message("AI: Altar" + bestRoom.altar.level + "(" + bestRoom.x + "," + bestRoom.y + ")");
 		if (bestRoom.x == player.getX() && bestRoom.y == player.getY()) {
 			player.message("AI: No need to move");
 			String combat = doCombat();
@@ -125,16 +128,17 @@ public class AiController {
 
 	public String doCombat() {
 		Random random = new Random();
-		if (player.getCurrentRoom().getPlayers().size() == 1) {
+		Room curRoom = player.getCurrentRoom();
+		if (curRoom.getPlayers().size() == 1) {
 			return "";
 		}
-		if (player.getCurrentRoom().getArena() != null ||
-				(player.getCurrentRoom().getAltar() != null &&
-				player.getCurrentRoom().getAltar().level > MAX_ALTAR_SAFE_LEVEL)) {
-			if (random.nextDouble() <= player.characteristic.aggressive || player.getCurrentRoom().getArena() != null) {
+		if (curRoom.arena != null ||
+				(curRoom.altar != null &&
+				curRoom.altar.level > MAX_ALTAR_SAFE_LEVEL)) {
+			if (random.nextDouble() <= player.characteristic.aggressive || curRoom.arena != null) {
 				Player target = null;
 				if (random.nextDouble() <= player.characteristic.crazy) {
-					target = player.getCurrentRoom().getPlayers().stream()
+					target = curRoom.getPlayers().stream()
 							.filter(p -> p != player)
 							.filter(p -> !p.alliance.name.equals(player.alliance.name))
 							.collect(Collectors.groupingBy(p -> p.alliance.name))
@@ -143,14 +147,14 @@ public class AiController {
 									entry.getValue().stream()
 											.mapToDouble(p -> p.power * p.crit).sum()))
 							.max(Map.Entry.comparingByValue())
-							.map(entry -> player.getCurrentRoom().getPlayers().stream()
+							.map(entry -> curRoom.getPlayers().stream()
 									.filter(p -> p.alliance.name.equals(entry.getKey()))
 									.max(Comparator.comparingDouble(p -> p.power * p.crit)))
 							.flatMap(p -> p)
 							.orElse(null);
 				}
 				if (target == null){
-					target = player.getCurrentRoom().getPlayers().stream()
+					target = curRoom.getPlayers().stream()
 							.filter(p -> p != player)
 							.filter(p -> !p.alliance.name.equals(player.alliance.name))
 							.collect(Collectors.groupingBy(p -> p.alliance.name))
@@ -159,7 +163,7 @@ public class AiController {
 									entry.getValue().stream()
 											.mapToDouble(p -> p.power * p.crit).sum()))
 							.min(Map.Entry.comparingByValue())
-							.map(entry -> player.getCurrentRoom().getPlayers().stream()
+							.map(entry -> curRoom.getPlayers().stream()
 									.filter(p -> p.alliance.name.equals(entry.getKey()))
 									.min(Comparator.comparingDouble(p -> p.power * p.crit)))
 							.flatMap(p -> p)

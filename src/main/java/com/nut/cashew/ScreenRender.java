@@ -181,11 +181,11 @@ public class ScreenRender {
 
 	public void look() {
 		lookBox.clear();
-		if (povRoom.getBoss() != null) {
-			lookBox.addMessage("Boss Pow: " + povRoom.getBoss().power + "; Reward: " + povRoom.getBoss().reward);
+		if (povRoom.boss != null) {
+			lookBox.addMessage("Boss Pow: " + povRoom.boss.power + "; Reward: " + povRoom.boss.reward);
 		}
-		if (povRoom.getAltar() != null && povRoom.getAltar().level > 0) {
-			lookBox.addMessage("Altar lv." + povRoom.getAltar().level);
+		if (povRoom.altar != null && povRoom.altar.level > 0) {
+			lookBox.addMessage("Altar lv." + povRoom.altar.level);
 		}
 
 		StringBuilder sb = new StringBuilder();

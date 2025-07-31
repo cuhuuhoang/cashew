@@ -14,16 +14,11 @@ import static com.nut.cashew.Const.*;
 public class MapData {
 	public static final int OFFSET = MAP_FULL_WIDTH / 2;
 
-	@Getter
-	private final List<Altar> altars;
-	@Getter
-	private final List<Treasure> treasures;
-	@Getter
-	private final List<Boss> bosses;
-	@Getter
-	private final Arena arena;
-	@Getter
-	private final WaitRoom waitRoom;
+	public final List<Altar> altars;
+	public final List<Treasure> treasures;
+	public final List<Boss> bosses;
+	public final Arena arena;
+	public final WaitRoom waitRoom;
 
 	@Getter
 	private final Room[][] rooms = new Room[MAP_FULL_WIDTH][MAP_FULL_HEIGHT];
