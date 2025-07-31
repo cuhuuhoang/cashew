@@ -1,8 +1,8 @@
 package com.nut.cashew;
 
 
+import com.nut.cashew.room.*;
 import lombok.Getter;
-import org.javatuples.Pair;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -19,7 +19,11 @@ public class MapData {
 	@Getter
 	private final List<Treasure> treasures;
 	@Getter
+	private final List<Boss> bosses;
+	@Getter
 	private final Arena arena;
+	@Getter
+	private final WaitRoom waitRoom;
 
 	@Getter
 	private final Room[][] rooms = new Room[MAP_FULL_WIDTH][MAP_FULL_HEIGHT];
@@ -33,7 +37,9 @@ public class MapData {
 		}
 		altars = List.copyOf(placeAltars());
 		arena = placeArena();
+		waitRoom = placeWaitRoom();
 		treasures = new LinkedList<>();
+		bosses = new LinkedList<>();
 	}
 
 	public Room getRoom(int x, int y) {
@@ -44,29 +50,55 @@ public class MapData {
 		}
 		return rooms[ix][iy];
 	}
-	
-	public void placeTreasure() {
+
+	private Room emptyRoom() {
 		List<Room> emptyRooms = new ArrayList<>();
 		for (int x = 0; x < MAP_FULL_WIDTH; x++) {
 			for (int y = 0; y < MAP_FULL_HEIGHT; y++) {
 				Room room = rooms[x][y];
-				if (room.getAltar() == null && room.getArena() == null && room.getTreasure() == null) {
+				if (room.isEmpty()) {
 					emptyRooms.add(room);
 				}
 			}
 		}
-		if (emptyRooms.isEmpty()) {return;}
-		Room room = emptyRooms.get(new Random().nextInt(emptyRooms.size()));
+		if (emptyRooms.isEmpty()) {
+			return null;
+		}
+		return emptyRooms.get(new Random().nextInt(emptyRooms.size()));
+	}
+	
+	public void placeTreasure() {
+		Room room = emptyRoom();
+		if (room == null) {
+			return;
+		}
 		Treasure treasure = new Treasure(room, TREASURE_MIN_REWARD + new Random().nextDouble() * (TREASURE_MAX_REWARD - TREASURE_MIN_REWARD));
-		room.setTreasure(treasure);
+		room.treasure = treasure;
 		treasures.add(treasure);
+	}
+
+	public void placeBoss(long power, double reward) {
+		Room room = emptyRoom();
+		if (room == null) {
+			return;
+		}
+		Boss boss = new Boss(room, power, reward);
+		room.boss = boss;
+		bosses.add(boss);
 	}
 	
 	private Arena placeArena() {
 		Room room = getRoom(0, -OFFSET + 2);
 		Arena arena = new Arena(room);
-		room.setArena(arena);
+		room.arena = arena;
 		return arena;
+	}
+
+	private WaitRoom placeWaitRoom() {
+		Room room = getRoom(0, -OFFSET + 1);
+		WaitRoom waitRoom = new WaitRoom(room);
+		room.waitRoom = waitRoom;
+		return waitRoom;
 	}
 
 	private List<Altar> placeAltars() {
@@ -90,7 +122,7 @@ public class MapData {
 	private Altar placeAltar(int x, int y, int level) {
 		Room room = getRoom(x, y);
 		Altar altar = new Altar(level, room);
-		room.setAltar(altar);
+		room.altar = altar;
 		return altar;
 	}
 

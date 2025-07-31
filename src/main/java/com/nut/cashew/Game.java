@@ -21,18 +21,18 @@ public class Game {
 		LineReader reader = LineReaderBuilder.builder().terminal(terminal).build();
 		terminal.enterRawMode();
 
-		MapData map = new MapData();
-		ScreenRender screenRender = new ScreenRender();
-		PlayerSet playerSet = new PlayerSet(map, screenRender);
-		EventController eventController = new EventController(map, playerSet.getPlayers(), screenRender);
 		AtomicInteger autoSpeed = new AtomicInteger(100);
+		MapData map = new MapData();
+		ScreenRender screenRender = new ScreenRender(map);
+		PlayerSet playerSet = new PlayerSet(map, screenRender);
+		screenRender.setPOV(playerSet.getPlayers().get(0));
+		EventController eventController = new EventController(map, playerSet.getPlayers(), screenRender, autoSpeed);
 
-		Thread inputThread = getInputThread(reader, autoSpeed, playerSet);
+		Thread inputThread = getInputThread(reader, autoSpeed, playerSet, screenRender, eventController);
 		inputThread.start();
 
 		while (true) {
-			Player player = playerSet.getCurPlayer();
-			List<String> screenBox = screenRender.box(player, map, playerSet, eventController);
+			List<String> screenBox = screenRender.box(playerSet, eventController);
 			terminal.puts(Capability.clear_screen);
 			screenBox.forEach(s -> terminal.writer().println(s));
 			terminal.flush();
@@ -40,11 +40,10 @@ public class Game {
 			playerSet.doAction();
 			Thread.sleep(autoSpeed.get());
 			eventController.eventCheck();
-			playerSet.startTurn();
 		}
 	}
 
-	private static @NotNull Thread getInputThread(LineReader reader, AtomicInteger autoSpeed, PlayerSet playerSet) {
+	private static @NotNull Thread getInputThread(LineReader reader, AtomicInteger autoSpeed, PlayerSet playerSet, ScreenRender screenRender, EventController eventController) {
 		Thread inputThread = new Thread(() -> {
 			while (true) {
 				try {
@@ -64,9 +63,15 @@ public class Game {
 					String action = pair.getValue1();
 
 					if ("p".equals(action) || action.isEmpty()) {
-						playerSet.setCurPlayer(num);
+						screenRender.setVRoom(0);
+						screenRender.setPOV(playerSet.getPlayers().get(num));
+					} else if ("v".equals(action)) {
+						screenRender.setVRoom(num);
 					} else if ("s".equals(action)) {
 						autoSpeed.set(0);
+					} else if ("n".equals(action)) {
+						autoSpeed.set(0);
+						eventController.slowNextEvent = true;
 					}
 				} catch (Exception e) {
 					e.printStackTrace();

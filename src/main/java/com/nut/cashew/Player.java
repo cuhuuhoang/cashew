@@ -1,11 +1,12 @@
 package com.nut.cashew;
 
 
+import com.nut.cashew.room.Boss;
+import com.nut.cashew.room.Treasure;
 import lombok.Getter;
 import org.javatuples.Pair;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.nut.cashew.Const.*;
 import static com.nut.cashew.ScreenRender.*;
@@ -17,8 +18,6 @@ public class Player {
 	public int y;
 
 	public final MessageBox messageBox;
-	public final MessageBox lookBox;
-	public final MessageBox statsBox;
 	public final MessageBox globalBox;
 	public final String name;
 	@Getter
@@ -34,7 +33,9 @@ public class Player {
 	@Getter
 	public double grow = 1.0;
 	@Getter
-	public int power = 100;
+	public long power = 100;
+	public long maxPower = MAX_POWER;
+	public boolean reachedMax = false;
 	public final Alliance alliance;
 
 	public Player(MapData map, String name, MessageBox globalBox, Characteristic characteristic, Alliance alliance) {
@@ -43,8 +44,6 @@ public class Player {
 		this.alliance = alliance;
 		this.aiController = new AiController(this);
 		this.messageBox = new MessageBox("Messages", BOX_MESSAGES_WIDTH, BOX_MESSAGES_HEIGHT);
-		this.lookBox = new MessageBox("Look", BOX_LOOK_WIDTH, BOX_LOOK_HEIGHT);
-		this.statsBox = new MessageBox("Stats", BOX_STATS_WIDTH, BOX_STATS_HEIGHT);
 		this.nextAction = new ArrayDeque<>();
 		this.globalBox = globalBox;
 		this.characteristic = characteristic;
@@ -120,6 +119,22 @@ public class Player {
 	}
 
 	public void attack(String targetName) {
+		if (map.getRoom(x, y).getBoss() != null && "boss".equalsIgnoreCase(targetName) ) {
+			double dame = power * crit;
+			Boss boss = map.getRoom(x, y).getBoss();
+			if (dame >= boss.power) {
+				grow += boss.reward;
+				grow += 0.05;
+				map.getBosses().remove(boss);
+				boss.room.setBoss(null);
+			} else {
+				double reward = boss.reward * dame / boss.power;
+				grow += reward;
+				boss.power -= (long) dame;
+				boss.reward -= reward;
+				message("attacked boss, gain " + String.format("%.2f", reward));
+			}
+		}
 		if (map.getRoom(x, y).getAltar() == null && map.getRoom(x, y).getArena() == null) {
 			message("Can not attack open field");
 			return;
@@ -134,22 +149,32 @@ public class Player {
 					message("Can not attack same alliance");
 					return;
 				}
-				Random rand = new Random();
-				double damage = rand.nextDouble() * Math.min(target.power / target.crit, power / crit);
-				this.power -= Math.min((int) (damage * (1 + target.crit)), power);
-				target.power -= Math.min ((int) (damage * (1 + crit)), target.power);
-				if (getCurrentRoom().getAltar() != null && getCurrentRoom().getAltar().level > 0) {
+				double damage = Math.min(target.power / target.crit, power / crit);
+				if (getCurrentRoom().getArena() == null) {
+					this.power -= Math.min((int) (damage * target.crit), power);
+				}
+				target.power -= Math.min((int) (damage * crit), target.power);
+				if (getCurrentRoom().getAltar() != null && getCurrentRoom().getAltar().level > MAX_ALTAR_SAFE_LEVEL) {
 					int altarLevel = getCurrentRoom().getAltar().level;
 					double critIncrease = (double) altarLevel * altarLevel / 100;
 					crit += critIncrease;
 					target.crit += critIncrease;
 				}
+				checkRespawn();
+				target.checkRespawn();
 				String message = String.format("%s attacked %s, damage %d", name, targetName, (int) damage);
 				message(message);
 				return;
 			}
 		}
 		message("Target disappeared");
+	}
+
+	public void sit() {
+		message("Sit");
+		if (getCurrentRoom().getAltar() != null) {
+			getCurrentRoom().getAltar().players.add(name);
+		}
 	}
 
 	public Room getCurrentRoom() {
@@ -171,7 +196,7 @@ public class Player {
 		}
 	}
 
-	public void startTurn() {
+	public void checkRespawn() {
 		Room room = map.getRoom(x, y);
 		if (power < 100) {
 			message("Low power " + power);
@@ -182,18 +207,6 @@ public class Player {
 			if (power < room.getAltar().entryPower()) {
 				respawn();
 			}
-			int inc = (int) ((double) room.getAltar().powerGain() / Math.max(room.getPlayers().size(), 1));
-			inc = Math.max(inc, 1);
-			power += (int) (inc * grow);
-			if (power > (double) MAX_POWER * 2d) {
-				power = BASE_POWER;
-				globalBox.addMessage(getFullName() + " Power invalid");
-				respawn();
-			} else if (power > MAX_POWER) {
-				power = MAX_POWER;
-			}
-
-			message("Sit at altar, power increase " + inc);
 		}
 	}
 
@@ -201,31 +214,6 @@ public class Player {
 		return "["+alliance.name + "]" +name;
 	}
 
-	public void look() {
-		Room room = map.getRoom(x, y);
-		lookBox.clear();
-		if (room.getAltar() != null && room.getAltar().level > 0) {
-			lookBox.addMessage("Altar lv." + room.getAltar().level);
-		}
-
-		StringBuilder sb = new StringBuilder();
-		for (Player player : room.getPlayers()) {
-			if (player != this) {
-				sb.append(player.getFullName()).append(" ");
-			}
-		}
-		if (!sb.isEmpty()) {
-			lookBox.addMessage("Players: " + sb);
-		}
-
-		if (lookBox.isEmpty()) {
-			lookBox.addMessage("Nothing");
-		}
-		statsBox.clear();
-		statsBox.addMessage("Name: " + getFullName());
-		statsBox.addMessage("Char: " + characteristic);
-		statsBox.addMessage(String.format("Power: %d; Cr: %.2f; Gr: %.2f", power, crit, grow));
-	}
 
 	public void message(String message) {
 		messageBox.addMessage(message);
@@ -259,6 +247,7 @@ public class Player {
 			case "l" -> move(1, 0);
 			case "respawn" -> respawn();
 			case "treasure" -> takeTreasure();
+			case "sit" -> sit();
 			default -> message("Unknown command: " + command);
 		}
 	}

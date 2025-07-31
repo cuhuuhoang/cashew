@@ -8,49 +8,38 @@ import java.util.stream.Collectors;
 import static com.nut.cashew.Const.*;
 
 public class PlayerSet {
+
 	@Getter
 	private final List<Player> players;
-	private int currentPlayer = 1;
-
-	private final ScreenRender screenRender;
 
 	@Getter
 	public final List<Alliance> alliances;
 
 	public PlayerSet(MapData map, ScreenRender screenRender) {
-		this.screenRender = screenRender;
 		List<Alliance> tmpAlliances = new ArrayList<>();
 		for (int i = 0; i < TOTAL_ALLIANCE; i++) {
 			tmpAlliances.add(new Alliance("A" + i));
 		}
 		alliances = List.copyOf(tmpAlliances);
+		int playersPerAlliance = TOTAL_PLAYER / TOTAL_ALLIANCE;
+		Map<Alliance, Integer> allianceCount = new HashMap<>();
+		alliances.forEach(a -> allianceCount.put(a, 0));
+		Random random = new Random();
 		List<Player> tmpPlayers = new ArrayList<>();
 		for (int i = 0; i < Const.TOTAL_PLAYER; i++) {
-			Random random = new Random();
 			Characteristic characteristic =
 					new Characteristic(random.nextDouble(), random.nextDouble(), random.nextDouble());
-			Alliance alliance = alliances.get(random.nextInt(TOTAL_ALLIANCE));
+			List<Alliance> availableAlliances = alliances.stream()
+					.filter(a -> allianceCount.get(a) < playersPerAlliance)
+					.collect(Collectors.toList());
+			Alliance alliance = availableAlliances.get(random.nextInt(availableAlliances.size()));
+			allianceCount.put(alliance, allianceCount.get(alliance) + 1);
 			String name = String.format("P%0" + String.valueOf(Const.TOTAL_PLAYER - 1).length() + "d", i);
 			Player player = new Player(map, name, screenRender.globalBox, characteristic, alliance);
 			player.respawn();
 			tmpPlayers.add(player);
 		}
 		players = List.copyOf(tmpPlayers);
-	}
-
-	public Player getCurPlayer() {
-		return players.get(currentPlayer);
-	}
-
-	public void setCurPlayer(int index) {
-		if (index < 0 || index > players.size()) {
-			return;
-		}
-		currentPlayer = index;
-	}
-
-	public void startTurn() {
-		players.forEach(Player::startTurn);
 	}
 
 	public void doAction() {

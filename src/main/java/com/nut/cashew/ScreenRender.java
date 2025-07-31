@@ -1,8 +1,12 @@
 package com.nut.cashew;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
@@ -40,15 +44,30 @@ public class ScreenRender {
 	public final MessageBox globalBox = new MessageBox("Global", BOX_GLOBAL_WIDTH, BOX_GLOBAL_HEIGHT);
 	private final MessageBox mapBox = new MessageBox("Map", MAP_VIEW_WIDTH, MAP_VIEW_HEIGHT);
 
-	private static List<String> combineColumns(List<List<String>> lists) {
+	public final MessageBox lookBox = new MessageBox("Look", BOX_LOOK_WIDTH, BOX_LOOK_HEIGHT);
+	public final MessageBox statsBox = new MessageBox("Stats", BOX_STATS_WIDTH, BOX_STATS_HEIGHT);
+	private final MessageBox dummyMessageBox = new MessageBox("Message", BOX_MESSAGES_WIDTH, BOX_MESSAGES_HEIGHT);
+
+	private final MapData map;
+	private Player povPlayer;
+	private Room povRoom;
+	private int povRoomNum = 1;
+
+
+	public ScreenRender(MapData map) {
+		this.map = map;
+	}
+
+	@SafeVarargs
+	private static List<String> combineColumns(List<String>... lists) {
 		List<String> result = new LinkedList<>();
-		int maxHeight = lists.stream().mapToInt(List::size).max().orElse(0);
-		List<Integer> widthList = lists.stream().map(strings -> strings.get(0).length())
+		int maxHeight = Arrays.stream(lists).mapToInt(List::size).max().orElse(0);
+		List<Integer> widthList = Arrays.stream(lists).map(strings -> strings.get(0).length())
 				.collect(Collectors.toList());
 		for (int i = 0; i < maxHeight; i++) {
 			StringBuilder sb = new StringBuilder();
-			for (int j = 0; j < lists.size(); j++) {
-				List<String> list = lists.get(j);
+			for (int j = 0; j < lists.length; j++) {
+				List<String> list = lists[j];
 				if (i < list.size()) {
 					sb.append(list.get(i));
 				} else {
@@ -60,9 +79,10 @@ public class ScreenRender {
 		return result;
 	}
 
-	private static List<String> combineRows(List<List<String>> lists) {
+	@SafeVarargs
+	private static List<String> combineRows(List<String>... lists) {
 		List<String> result = new LinkedList<>();
-		int maxWidth = lists.stream().mapToInt(strings -> strings.get(0).length()).max().orElse(0);
+		int maxWidth = Arrays.stream(lists).mapToInt(strings -> strings.get(0).length()).max().orElse(0);
 		for(List<String> list : lists) {
 			for (String s : list) {
 				StringBuilder sb = new StringBuilder();
@@ -82,7 +102,7 @@ public class ScreenRender {
 	private void setRank(PlayerSet playerSet) {
 		rankBox.clear();
 		var sortedPlayers = playerSet.getPlayers().stream()
-				.sorted((p1, p2) -> Integer.compare(p2.power, p1.power))
+				.sorted((p1, p2) -> Long.compare(p2.power, p1.power))
 				.collect(Collectors.toList());
 		int singlePowerLength = String.valueOf(MAX_POWER).length();
 		for (int i = 0; i < Math.min(BOX_RANK_HEIGHT, sortedPlayers.size()); i++) {
@@ -96,23 +116,23 @@ public class ScreenRender {
 					var alliancePlayers = playerSet.getPlayers().stream()
 							.filter(p -> p.alliance.equals(alliance))
 							.collect(Collectors.toList());
-					var totalPower = alliancePlayers.stream().mapToInt(p -> p.power).sum();
-					var avgCrit = calculateWeightedAverage(alliancePlayers, Player::getCrit);
-					var avgGrow = calculateWeightedAverage(alliancePlayers, Player::getGrow);
-					var avgAgg = calculateWeightedAverage(alliancePlayers, p -> p.getCharacteristic().getAggressive());
-					var avgCz  = calculateWeightedAverage(alliancePlayers, p -> p.getCharacteristic().getCrazy());
+					var totalPower = alliancePlayers.stream().mapToLong(p -> p.power).sum();
+					var avgCrit = calculateAverage(alliancePlayers, Player::getCrit);
+					var avgGrow = calculateAverage(alliancePlayers, Player::getGrow);
+					var avgAgg = calculateAverage(alliancePlayers, p -> p.getCharacteristic().getAggressive());
+					var avgCz  = calculateAverage(alliancePlayers, p -> p.getCharacteristic().getCrazy());
 
 					return Map.entry(alliance, new Object[]{totalPower, avgCrit, avgGrow, avgAgg, avgCz});
 				})
-				.sorted((e1, e2) -> Integer.compare((Integer) e2.getValue()[0], (Integer) e1.getValue()[0]))
+				.sorted((e1, e2) -> Long.compare((Long) e2.getValue()[0], (Long) e1.getValue()[0]))
 				.collect(Collectors.toList());
 
 		int alliancePowerLength = String.valueOf(MAX_POWER * TOTAL_PLAYER / TOTAL_ALLIANCE).length();
 		alliancePower.stream()
 				.limit(BOX_ALLIANCE_RANK_HEIGHT)
-				.forEach(entry -> allianceBox.addMessage(String.format("%s: %" + alliancePowerLength + "d Ct:%.2f Gr:%.2f Ag:%.2f, Cr:%.2f)",
+				.forEach(entry -> allianceBox.addMessage(String.format("%s: %" + alliancePowerLength + "d Ct:%.2f Gr:%.2f Ag:%.2f, Cr:%.2f",
 						entry.getKey().name,
-						(Integer) entry.getValue()[0],
+						(Long) entry.getValue()[0],
 						(Double) entry.getValue()[1],
 						(Double) entry.getValue()[2],
 						(Double) entry.getValue()[3],
@@ -120,19 +140,22 @@ public class ScreenRender {
 
 	}
 
-	private double calculateWeightedAverage(List<Player> players, ToDoubleFunction<Player> valueExtractor){
+	private double calculateAverage(List<Player> players, ToDoubleFunction<Player> valueExtractor){
+//		return players.stream()
+//				.mapToDouble(p -> valueExtractor.applyAsDouble(p) * p.power)
+//				.sum() / players.stream()
+//				.mapToInt(p -> p.power)
+//				.sum();
 		return players.stream()
-				.mapToDouble(p -> valueExtractor.applyAsDouble(p) * p.power)
-				.sum() / players.stream()
-				.mapToInt(p -> p.power)
-				.sum();
+				.mapToDouble(valueExtractor)
+				.average()
+				.orElse(0);
 	}
 
-	public void updateMapView(Player player, MapData map) {
-		mapBox.clear();
+	private void updateMapView() {
 		Room[][] rooms = new Room[MAP_VIEW_WIDTH][MAP_VIEW_HEIGHT];
-		int startX = player.getX() - MAP_VIEW_WIDTH / 2;
-		int startY = player.getY() - MAP_VIEW_HEIGHT / 2;
+		int startX = povRoom.x - MAP_VIEW_WIDTH / 2;
+		int startY = povRoom.y - MAP_VIEW_HEIGHT / 2;
 
 		for (int y = 0; y < MAP_VIEW_HEIGHT; y++) {
 			for (int x = 0; x < MAP_VIEW_WIDTH; x++) {
@@ -148,32 +171,91 @@ public class ScreenRender {
 				if (rooms[x][y] == null) {
 					sb.append(" ");
 				} else {
-					sb.append(rooms[x][y].render(player));
+					sb.append(rooms[x][y].render(povPlayer));
 				}
 			}
 			mapBox.addMessage(sb.toString());
 		}
 	}
 
-	public List<String> box(Player player, MapData map, PlayerSet playerSet, EventController eventController) {
-		setRank(playerSet);
-		updateMapView(player, map);
-		//
-		player.look();
-		//
-		List<String> infoPanel = combineColumns(List.of(player.messageBox.box(), player.lookBox.box()));
-		List<String> firstCol = combineRows(List.of(infoPanel, mapBox.box()));
-		//
-		List<String> secondCol = new LinkedList<>();
-		secondCol.addAll(globalBox.box());
-		secondCol.addAll(eventController.infoBox.box());
-		secondCol.addAll(player.statsBox.box());
-		//
-		List<String> thirdCol = new LinkedList<>();
-		thirdCol.addAll(rankBox.box());
-		thirdCol.addAll(allianceBox.box());
 
+	public void look() {
+		lookBox.clear();
+		if (povRoom.getBoss() != null) {
+			lookBox.addMessage("Boss Pow: " + povRoom.getBoss().power + "; Reward: " + povRoom.getBoss().reward);
+		}
+		if (povRoom.getAltar() != null && povRoom.getAltar().level > 0) {
+			lookBox.addMessage("Altar lv." + povRoom.getAltar().level);
+		}
+
+		StringBuilder sb = new StringBuilder();
+		for (Player player : povRoom.getPlayers()) {
+			if (player != povPlayer) {
+				sb.append(player.getFullName()).append(" ");
+			}
+		}
+		if (!sb.isEmpty()) {
+			lookBox.addMessage("Players: " + sb);
+		}
+
+		if (lookBox.isEmpty()) {
+			lookBox.addMessage("Nothing");
+		}
+		statsBox.clear();
+		if (povPlayer != null) {
+			statsBox.addMessage("Name: " + povPlayer.getFullName());
+			statsBox.addMessage("Char: " + povPlayer.characteristic);
+			statsBox.addMessage(String.format("Power: %d; Cr: %.2f; Gr: %.2f",
+					povPlayer.power, povPlayer.crit, povPlayer.grow));
+		}
+	}
+
+	public void setPOV(Player player) {
+		if (player.room == null) throw new IllegalArgumentException("Player is null");
+		setPOV(player, player.room);
+	}
+
+	public void setVRoom(int num) {
+		povRoomNum = num;
+	}
+
+	private void setPOV(Room room) {
+		if (room == null) throw new IllegalArgumentException("Room is null");
+		setPOV(null, room);
+	}
+
+	private void setPOV(@Nullable Player player, Room room) {
+		this.povPlayer = player;
+		this.povRoom = room;
+	}
+
+	public List<String> box(PlayerSet playerSet, EventController eventController) {
+		if (povRoomNum == 1) {
+			if (eventController.getPovRoom() != null) {
+				setPOV(eventController.getPovRoom());
+			} else {
+				setPOV(playerSet.getPlayers().stream()
+						.min((p1, p2) -> Long.compare(p2.power, p1.power))
+						.orElseThrow(IllegalStateException::new));
+			}
+		}
+		setRank(playerSet);
+		updateMapView();
+		look();
+		//
+		List<String> messagePanel = povPlayer != null ? povPlayer.messageBox.box() : dummyMessageBox.box();
+		List<String> infoPanel = combineColumns(messagePanel, lookBox.box());
+		List<String> firstCol = combineRows(infoPanel, mapBox.box());
+		//
+		List<String> secondCol = combineRows(
+				globalBox.box(),
+				eventController.infoBox.box(),
+				statsBox.box());
+		//
+		List<String> thirdCol = combineRows(
+				rankBox.box(),
+				allianceBox.box());
 		// Print combined panels
-		return combineColumns(List.of(firstCol, secondCol, thirdCol));
+		return combineColumns(firstCol, secondCol, thirdCol);
 	}
 }

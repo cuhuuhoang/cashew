@@ -1,4 +1,6 @@
-package com.nut.cashew;
+package com.nut.cashew.room;
+
+import com.nut.cashew.Room;
 
 public class Arena {
 	public boolean isOpen;

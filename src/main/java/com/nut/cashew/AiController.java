@@ -3,6 +3,7 @@ package com.nut.cashew;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.nut.cashew.room.Altar;
 import org.javatuples.Pair;
 
 import static com.nut.cashew.Const.MAX_ALTAR_SAFE_LEVEL;
@@ -35,13 +36,30 @@ public class AiController {
 			return "treasure";
 		}
 
+		// boss check
+		if (player.getCurrentRoom().getBoss() != null) {
+			player.message("AI: Boss");
+			return "attack boss";
+		}
+
 		List<Room> treasureRooms = player.getMap().getTreasures().stream()
 				.map(t -> t.room).collect(Collectors.toList());
 		if (!treasureRooms.isEmpty()) {
 			Room bestRoom = nearestRoom(treasureRooms);
 			double distance = distance(bestRoom.x, bestRoom.y, player.getX(), player.getY());
-			if (distance < 20) {
+			if (distance < 5) {
 				player.message("AI: Treasure (" + bestRoom.x + "," + bestRoom.y + ")");
+				return moveTo(bestRoom);
+			}
+		}
+
+		List<Room> bossRooms = player.getMap().getBosses().stream()
+				.map(b -> b.room).collect(Collectors.toList());
+		if (!bossRooms.isEmpty()) {
+			Room bestRoom = nearestRoom(bossRooms);
+			double distance = distance(bestRoom.x, bestRoom.y, player.getX(), player.getY());
+			if (distance < 20) {
+				player.message("AI: Boss (" + bestRoom.x + "," + bestRoom.y + ")");
 				return moveTo(bestRoom);
 			}
 		}
@@ -96,7 +114,11 @@ public class AiController {
 		player.message("AI: Altar" + bestRoom.getAltar().level + "(" + bestRoom.x + "," + bestRoom.y + ")");
 		if (bestRoom.x == player.getX() && bestRoom.y == player.getY()) {
 			player.message("AI: No need to move");
-			return doCombat();
+			String combat = doCombat();
+			if (combat.isEmpty()) {
+				return "sit";
+			}
+			return combat;
 		}
 		return moveTo(bestRoom);
 	}
@@ -109,7 +131,7 @@ public class AiController {
 		if (player.getCurrentRoom().getArena() != null ||
 				(player.getCurrentRoom().getAltar() != null &&
 				player.getCurrentRoom().getAltar().level > MAX_ALTAR_SAFE_LEVEL)) {
-			if (random.nextDouble() <= player.characteristic.aggressive) {
+			if (random.nextDouble() <= player.characteristic.aggressive || player.getCurrentRoom().getArena() != null) {
 				Player target = null;
 				if (random.nextDouble() <= player.characteristic.crazy) {
 					target = player.getCurrentRoom().getPlayers().stream()

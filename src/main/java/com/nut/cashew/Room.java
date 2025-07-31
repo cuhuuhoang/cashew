@@ -1,7 +1,9 @@
 package com.nut.cashew;
 
+import com.nut.cashew.room.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,19 +12,20 @@ import static com.nut.cashew.Const.MAX_ALTAR_SAFE_LEVEL;
 
 public class Room {
 	@Getter
-	@Setter
-	private Altar altar;
-	@Getter
 	private final List<Player> players;
-	@Getter
-	@Setter
-	private Arena arena;
-	@Getter
-	@Setter
-	private Treasure treasure;
+
+	public Altar altar;
+	public Arena arena;
+	public WaitRoom waitRoom;
+	public Treasure treasure;
+	public Boss boss;
 
 	public final int x;
 	public final int y;
+
+	public boolean isEmpty() {
+		return altar == null && arena == null && treasure == null && boss == null && waitRoom == null;
+	}
 
 	public Room(int x, int y) {
 		this.x = x;
@@ -30,7 +33,7 @@ public class Room {
 		this.players = new ArrayList<>();
 	}
 
-	public String render(Player player) {
+	public String render(@Nullable Player player) {
 		if (altar != null) {
 			if (altar.level <= MAX_ALTAR_SAFE_LEVEL) {
 				return "\u001B[36m" + altar.level + "\u001B[0m";
@@ -40,15 +43,24 @@ public class Room {
 		if (treasure != null) {
 			return "\u001B[33mT\u001B[0m";
 		}
-		if (players.contains(player)) {
-			return "@";
+		if (boss != null) {
+			return "\u001B[31mB\u001B[0m";
 		}
-		for (Player p : players) {
-			if (p != player) {
-				if (p.alliance.name.equals(player.alliance.name)) {
-					return "\u001B[36m@\u001B[0m";
-				}
+		if (player == null) {
+			if (!players.isEmpty()) {
 				return "\u001B[31m@\u001B[0m";
+			}
+		} else {
+			if (players.contains(player)) {
+				return "@";
+			}
+			for (Player p : players) {
+				if (p != player) {
+					if (p.alliance.name.equals(player.alliance.name)) {
+						return "\u001B[36m@\u001B[0m";
+					}
+					return "\u001B[31m@\u001B[0m";
+				}
 			}
 		}
 		return "\u001B[32m.\u001B[0m";
