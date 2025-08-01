@@ -17,8 +17,8 @@ public class MapData {
 	public final List<Altar> altars;
 	public final List<Treasure> treasures;
 	public final List<Boss> bosses;
-	public final Arena arena;
-	public final WaitRoom waitRoom;
+	public final List<Arena> arenas;
+	public final List<Lobby> lobbies;
 
 	@Getter
 	private final Room[][] rooms = new Room[MAP_FULL_WIDTH][MAP_FULL_HEIGHT];
@@ -31,10 +31,16 @@ public class MapData {
 			}
 		}
 		altars = List.copyOf(placeAltars());
-		arena = placeArena();
-		waitRoom = placeWaitRoom();
 		treasures = new LinkedList<>();
 		bosses = new LinkedList<>();
+		List<Arena> tmpArenas = new ArrayList<>();
+		List<Lobby> tmpLobbies = new ArrayList<>();
+		for (int i = 0; i < TOTAL_SEED; i++) {
+			tmpArenas.add(placeArena(i));
+			tmpLobbies.add(placeLobby(i));
+		}
+		this.arenas = List.copyOf(tmpArenas);
+		this.lobbies = List.copyOf(tmpLobbies);
 	}
 
 	public Room getRoom(int x, int y) {
@@ -51,7 +57,7 @@ public class MapData {
 		for (int x = 0; x < MAP_FULL_WIDTH; x++) {
 			for (int y = 0; y < MAP_FULL_HEIGHT; y++) {
 				Room room = rooms[x][y];
-				if (room.isEmpty()) {
+				if (room.isEmpty() && Math.abs(x - OFFSET) + Math.abs(y - OFFSET) < (MAP_FULL_HEIGHT + MAP_FULL_WIDTH) / 5) {
 					emptyRooms.add(room);
 				}
 			}
@@ -77,23 +83,23 @@ public class MapData {
 		if (room == null) {
 			return;
 		}
-		Boss boss = new Boss(room, power, reward);
+		Boss boss = new Boss(room, power, reward, reward / 5);
 		room.boss = boss;
 		bosses.add(boss);
 	}
 	
-	private Arena placeArena() {
-		Room room = getRoom(0, -OFFSET + 2);
+	private Arena placeArena(int index) {
+		Room room = getRoom(index, -OFFSET + 2);
 		Arena arena = new Arena(room);
 		room.arena = arena;
 		return arena;
 	}
 
-	private WaitRoom placeWaitRoom() {
-		Room room = getRoom(0, -OFFSET + 1);
-		WaitRoom waitRoom = new WaitRoom(room);
-		room.waitRoom = waitRoom;
-		return waitRoom;
+	private Lobby placeLobby(int index) {
+		Room room = getRoom(index, -OFFSET + 1);
+		Lobby lobby = new Lobby(room);
+		room.lobby = lobby;
+		return lobby;
 	}
 
 	private List<Altar> placeAltars() {

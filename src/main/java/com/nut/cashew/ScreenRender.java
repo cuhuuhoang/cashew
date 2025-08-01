@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
@@ -34,10 +33,10 @@ public class ScreenRender {
 	public static final int BOX_GLOBAL_WIDTH = 40;
 	//
 	public static final int BOX_RANK_HEIGHT = 20;
-	public static final int BOX_RANK_WIDTH = 50;
+	public static final int BOX_RANK_WIDTH = 55;
 	//
-	public static final int BOX_ALLIANCE_RANK_HEIGHT = 10;
-	public static final int BOX_ALLIANCE_RANK_WIDTH = 50;
+	public static final int BOX_ALLIANCE_RANK_HEIGHT = 15;
+	public static final int BOX_ALLIANCE_RANK_WIDTH = 55;
 
 	public final MessageBox rankBox = new MessageBox("Rank", BOX_RANK_WIDTH, BOX_RANK_HEIGHT);
 	public final MessageBox allianceBox = new MessageBox("Alliance", BOX_ALLIANCE_RANK_WIDTH, BOX_ALLIANCE_RANK_HEIGHT);
@@ -46,6 +45,7 @@ public class ScreenRender {
 
 	public final MessageBox lookBox = new MessageBox("Look", BOX_LOOK_WIDTH, BOX_LOOK_HEIGHT);
 	public final MessageBox statsBox = new MessageBox("Stats", BOX_STATS_WIDTH, BOX_STATS_HEIGHT);
+	public final MessageBox infoBox = new MessageBox("Info", BOX_INFO_WIDTH, BOX_INFO_HEIGHT);
 	private final MessageBox dummyMessageBox = new MessageBox("Message", BOX_MESSAGES_WIDTH, BOX_MESSAGES_HEIGHT);
 
 	private final MapData map;
@@ -107,7 +107,7 @@ public class ScreenRender {
 		int singlePowerLength = String.valueOf(MAX_POWER).length();
 		for (int i = 0; i < Math.min(BOX_RANK_HEIGHT, sortedPlayers.size()); i++) {
 			var player = sortedPlayers.get(i);
-			rankBox.addMessage(String.format("[%s]%s: %" +singlePowerLength + "d (%.2f, %.2f)", player.alliance.name, player.name, player.power, player.crit, player.grow));
+			rankBox.addMessage(String.format("%s: %" +singlePowerLength + "d (%.2f, %.2f)", player.getFullName(), player.power, player.crit, player.grow));
 		}
 
 		allianceBox.clear();
@@ -124,13 +124,20 @@ public class ScreenRender {
 
 					return Map.entry(alliance, new Object[]{totalPower, avgCrit, avgGrow, avgAgg, avgCz});
 				})
-				.sorted((e1, e2) -> Long.compare((Long) e2.getValue()[0], (Long) e1.getValue()[0]))
+				.sorted((e1, e2) -> {
+					int compare = Integer.compare(e1.getKey().seed.index, e2.getKey().seed.index);
+					if (compare != 0) {
+						return compare;
+					}
+					return Long.compare((Long) e2.getValue()[0], (Long) e1.getValue()[0]);
+				})
 				.collect(Collectors.toList());
 
 		int alliancePowerLength = String.valueOf(MAX_POWER * TOTAL_PLAYER / TOTAL_ALLIANCE).length();
 		alliancePower.stream()
 				.limit(BOX_ALLIANCE_RANK_HEIGHT)
-				.forEach(entry -> allianceBox.addMessage(String.format("%s: %" + alliancePowerLength + "d Ct:%.2f Gr:%.2f Ag:%.2f, Cr:%.2f",
+				.forEach(entry -> allianceBox.addMessage(String.format("%s %s: %" + alliancePowerLength + "d Ct:%.2f Gr:%.2f Ag:%.2f, Cr:%.2f",
+						entry.getKey().seed.name,
 						entry.getKey().name,
 						(Long) entry.getValue()[0],
 						(Double) entry.getValue()[1],
@@ -187,6 +194,9 @@ public class ScreenRender {
 		if (povRoom.altar != null && povRoom.altar.level > 0) {
 			lookBox.addMessage("Altar lv." + povRoom.altar.level);
 		}
+		if (povRoom.lobby != null) {
+			lookBox.addMessage("Lobby");
+		}
 
 		StringBuilder sb = new StringBuilder();
 		for (Player player : povRoom.getPlayers()) {
@@ -204,9 +214,11 @@ public class ScreenRender {
 		statsBox.clear();
 		if (povPlayer != null) {
 			statsBox.addMessage("Name: " + povPlayer.getFullName());
-			statsBox.addMessage("Char: " + povPlayer.characteristic);
-			statsBox.addMessage(String.format("Power: %d; Cr: %.2f; Gr: %.2f",
-					povPlayer.power, povPlayer.crit, povPlayer.grow));
+			for (String s : povPlayer.characteristic.print() ) {
+				statsBox.addMessage(s);
+			}
+			statsBox.addMessage(String.format("Power: %d/%d", povPlayer.power, povPlayer.maxPower));
+			statsBox.addMessage(String.format("Crit: %.3f; Grow: %.3f", povPlayer.crit, povPlayer.grow));
 		}
 	}
 
@@ -229,6 +241,20 @@ public class ScreenRender {
 		this.povRoom = room;
 	}
 
+	private void updateEventBox(PlayerSet playerSet, EventController eventController) {
+		infoBox.clear();
+		infoBox.addMessage("Turn: " + eventController.turnCount);
+		if (povPlayer != null) {
+			if (povPlayer.alliance.seed.arena.isOpen) {
+				infoBox.addMessage("In Arena Event");
+			}
+		} else {
+			if (playerSet.seeds.get(0).arena.isOpen) {
+				infoBox.addMessage("In Arena Event");
+			}
+		}
+	}
+
 	public List<String> box(PlayerSet playerSet, EventController eventController) {
 		if (povRoomNum == 1) {
 			if (eventController.getPovRoom() != null) {
@@ -242,6 +268,7 @@ public class ScreenRender {
 		setRank(playerSet);
 		updateMapView();
 		look();
+		updateEventBox(playerSet, eventController);
 		//
 		List<String> messagePanel = povPlayer != null ? povPlayer.messageBox.box() : dummyMessageBox.box();
 		List<String> infoPanel = combineColumns(messagePanel, lookBox.box());
@@ -249,7 +276,7 @@ public class ScreenRender {
 		//
 		List<String> secondCol = combineRows(
 				globalBox.box(),
-				eventController.infoBox.box(),
+				infoBox.box(),
 				statsBox.box());
 		//
 		List<String> thirdCol = combineRows(

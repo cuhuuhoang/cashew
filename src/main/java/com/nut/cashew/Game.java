@@ -26,7 +26,7 @@ public class Game {
 		ScreenRender screenRender = new ScreenRender(map);
 		PlayerSet playerSet = new PlayerSet(map, screenRender);
 		screenRender.setPOV(playerSet.getPlayers().get(0));
-		EventController eventController = new EventController(map, playerSet.getPlayers(), screenRender, autoSpeed);
+		EventController eventController = new EventController(map, playerSet, screenRender, autoSpeed);
 
 		Thread inputThread = getInputThread(reader, autoSpeed, playerSet, screenRender, eventController);
 		inputThread.start();
@@ -74,7 +74,7 @@ public class Game {
 						eventController.slowNextEvent = true;
 					}
 				} catch (Exception e) {
-					e.printStackTrace();
+					System.exit(1);
 				}
 			}
 		});

@@ -2,7 +2,6 @@ package com.nut.cashew;
 
 import com.nut.cashew.room.*;
 import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -16,7 +15,7 @@ public class Room {
 
 	public Altar altar;
 	public Arena arena;
-	public WaitRoom waitRoom;
+	public Lobby lobby;
 	public Treasure treasure;
 	public Boss boss;
 
@@ -24,7 +23,7 @@ public class Room {
 	public final int y;
 
 	public boolean isEmpty() {
-		return altar == null && arena == null && treasure == null && boss == null && waitRoom == null;
+		return altar == null && arena == null && treasure == null && boss == null && lobby == null;
 	}
 
 	public Room(int x, int y) {
@@ -40,11 +39,14 @@ public class Room {
 			}
 			return "\u001B[35m" + altar.level + "\u001B[0m";
 		}
-		if (treasure != null) {
-			return "\u001B[33mT\u001B[0m";
-		}
+//		if (treasure != null) {
+//			return "\u001B[33m.\u001B[0m";
+//		}
 		if (boss != null) {
 			return "\u001B[31mB\u001B[0m";
+		}
+		if (lobby != null) {
+			return "L";
 		}
 		if (player == null) {
 			if (!players.isEmpty()) {

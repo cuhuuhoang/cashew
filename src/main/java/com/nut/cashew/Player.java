@@ -19,7 +19,7 @@ public class Player {
 
 	public final MessageBox messageBox;
 	public final MessageBox globalBox;
-	public final String name;
+	public String name;
 	public final MapData map;
 	public final AiController aiController;
 	public final Queue<String> nextAction;
@@ -86,16 +86,29 @@ public class Player {
 		if (map.getRoom(x, y).arena != null) {
 			return new Pair<>(false, "Can not move to Arena");
 		}
+		if (map.getRoom(x, y).lobby != null) {
+			return new Pair<>(false, "Can not move to Wait Room");
+		}
 		if (!respawn) {
-			if (map.getRoom(x, y).arena != null && map.arena.isOpen) {
+			if (map.getRoom(x, y).arena != null) {
 				return new Pair<>(false, "Can not move out of Arena");
+			}
+			if (map.getRoom(x, y).lobby != null) {
+				return new Pair<>(false, "Can not move out of Wait Room");
 			}
 		}
 		return new Pair<>(true, "Moved " + x + "," + y);
 	}
 
 	public void moveToArena() {
-		Room room = map.arena.room;
+		moveNoCheck(alliance.seed.arena.room);
+	}
+
+	public void moveToLobby() {
+		moveNoCheck(alliance.seed.lobby.room);
+	}
+
+	private void moveNoCheck(Room room) {
 		moveNoCheck(room.x, room.y);
 	}
 
@@ -117,21 +130,65 @@ public class Player {
 		message(result.getValue1());
 	}
 
+	public void increaseCrit(double increase) {
+		if (alliance.leader == this) {
+			crit += increase;
+		} else {
+			alliance.leader.crit += increase * alliance.taxRate;
+			crit += increase * (1 - alliance.taxRate);
+		}
+	}
+
+	public void increaseGrow(double increase) {
+		if (alliance.leader == this) {
+			grow += increase;
+		} else {
+			alliance.leader.grow += increase * alliance.taxRate;
+			grow += increase * (1 - alliance.taxRate);
+		}
+	}
+
+	public void checkReset() {
+		if (reachedMax) {
+			reachedMax = false;
+			double ratio = switch (alliance.seed.index) {
+				case 0 -> 1.0;
+				case 1 -> 0.7;
+				case 2 -> 0.5;
+				default -> 0;
+			};
+			long resetPower = (long) (RESET_POWER_GAIN * ratio);
+			increaseMaxPower(resetPower);
+			power = BASE_POWER;
+			message("Power reset");
+		}
+	}
+
+	public void increaseMaxPower(long increase) {
+		if (alliance.leader == this) {
+			maxPower += increase;
+		} else {
+			alliance.leader.maxPower += (long) (increase * alliance.taxRate);
+			maxPower += (long) (increase * (1 - alliance.taxRate));
+		}
+	}
+
 	public void attack(String targetName) {
 		if (map.getRoom(x, y).boss != null && "boss".equalsIgnoreCase(targetName) ) {
 			double dame = power * crit;
 			Boss boss = map.getRoom(x, y).boss;
 			if (dame >= boss.power) {
-				grow += boss.reward;
-				grow += 0.05;
+				double reward = boss.reward + boss.finalReward;
+				increaseGrow(reward);
 				map.bosses.remove(boss);
 				boss.room.boss = null;
+				message("killed boss, gain " + String.format("%.5f", reward));
 			} else {
 				double reward = boss.reward * dame / boss.power;
-				grow += reward;
+				increaseGrow(reward);
 				boss.power -= (long) dame;
 				boss.reward -= reward;
-				message("attacked boss, gain " + String.format("%.2f", reward));
+				message("attacked boss, gain " + String.format("%.5f", reward));
 			}
 		}
 		if (map.getRoom(x, y).altar == null && map.getRoom(x, y).arena == null) {
@@ -149,15 +206,13 @@ public class Player {
 					return;
 				}
 				double damage = Math.min(target.power / target.crit, power / crit);
-				if (getCurrentRoom().arena == null) {
-					this.power -= Math.min((int) (damage * target.crit), power);
-				}
+				this.power -= Math.min((int) (damage * target.crit), power);
 				target.power -= Math.min((int) (damage * crit), target.power);
 				if (getCurrentRoom().altar != null && getCurrentRoom().altar.level > MAX_ALTAR_SAFE_LEVEL) {
 					int altarLevel = getCurrentRoom().altar.level;
-					double critIncrease = (double) altarLevel * altarLevel / 100;
-					crit += critIncrease;
-					target.crit += critIncrease;
+					double critIncrease = (double) altarLevel * altarLevel / 1000d;
+					increaseCrit(critIncrease);
+					target.increaseCrit(critIncrease);
 				}
 				checkRespawn();
 				target.checkRespawn();
@@ -188,8 +243,7 @@ public class Player {
 			map.treasures.remove(treasure);
 			room.treasure = null;
 			message("Take treasure " + String.format("%.2f", reward));
-//			globalBox.addMessage(getFullName() + " takes treasure " + String.format("%.2f", reward));
-			grow += reward;
+			increaseGrow(reward);
 		} else {
 			message("No treasure");
 		}
@@ -197,9 +251,13 @@ public class Player {
 
 	public void checkRespawn() {
 		Room room = map.getRoom(x, y);
-		if (power < 100) {
+		if (room.arena != null && power < BASE_POWER) {
+			power = room.arena.getPower(name);
+			moveToLobby();
+		}
+		if (power < BASE_POWER) {
 			message("Low power " + power);
-			power = 100;
+			power = BASE_POWER;
 			respawn();
 		}
 		if (room.altar != null && room.altar.level > 0) {
@@ -210,7 +268,7 @@ public class Player {
 	}
 
 	public String getFullName() {
-		return "["+alliance.name + "]" +name;
+		return "[" + alliance.name + "]" + name;
 	}
 
 

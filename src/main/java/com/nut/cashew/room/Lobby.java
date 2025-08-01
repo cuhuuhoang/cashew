@@ -2,10 +2,10 @@ package com.nut.cashew.room;
 
 import com.nut.cashew.Room;
 
-public class WaitRoom {
+public class Lobby {
 	public final Room room;
 
-	public WaitRoom(Room room) {
+	public Lobby(Room room) {
 		this.room = room;
 	}
 }

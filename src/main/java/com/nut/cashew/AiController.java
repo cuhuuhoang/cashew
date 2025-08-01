@@ -27,8 +27,14 @@ public class AiController {
 		MapData map = player.map;
 		Room curRoom = player.getCurrentRoom();
 
+		// lobby
+		if (curRoom.lobby != null) {
+			player.message("AI: Lobby");
+			return "";
+		}
+
 		// arena
-		if (curRoom.arena != null && map.arena.isOpen) {
+		if (curRoom.arena != null) {
 			player.message("AI: Arena Event");
 			return doCombat();
 		}
@@ -50,7 +56,7 @@ public class AiController {
 		if (!treasureRooms.isEmpty()) {
 			Room bestRoom = nearestRoom(treasureRooms);
 			double distance = distance(bestRoom.x, bestRoom.y, player.getX(), player.getY());
-			if (distance < 5) {
+			if (distance <= 1 && curRoom.altar == null) {
 				player.message("AI: Treasure (" + bestRoom.x + "," + bestRoom.y + ")");
 				return moveTo(bestRoom);
 			}
@@ -61,7 +67,7 @@ public class AiController {
 		if (!bossRooms.isEmpty()) {
 			Room bestRoom = nearestRoom(bossRooms);
 			double distance = distance(bestRoom.x, bestRoom.y, player.getX(), player.getY());
-			if (distance < 20) {
+			if (distance < 10) {
 				player.message("AI: Boss (" + bestRoom.x + "," + bestRoom.y + ")");
 				return moveTo(bestRoom);
 			}
