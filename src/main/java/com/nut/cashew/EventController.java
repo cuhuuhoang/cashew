@@ -6,14 +6,11 @@ import lombok.Getter;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static com.nut.cashew.Const.*;
 import static com.nut.cashew.Const.MAX_ALTAR_LEVEL;
 import static com.nut.cashew.Const.MAX_ALTAR_SAFE_LEVEL;
-import static com.nut.cashew.ScreenRender.*;
-import static com.nut.cashew.room.Arena.SEED_PROMOTE_COUNT;
 
 public class EventController {
 	private final MapData map;
@@ -26,7 +23,6 @@ public class EventController {
 	private Room povRoom;
 	private final AtomicInteger autoSpeed;
 	public boolean slowNextEvent;
-	public boolean isGlobalArenaOpen = false;
 
 	public EventController(MapData map, PlayerSet playerSet, ScreenRender screenRender, AtomicInteger autoSpeed) {
 		this.map = map;
@@ -42,10 +38,11 @@ public class EventController {
 
 	private void rewardArena(Alliance winner, Seed seed) {
 		// add to ranked
-		seed.arena.rankedAlliances.push(winner);
+		seed.rankedAlliances.push(winner);
 		// final winner
+		seed.winners.add(winner.name);
 		globalBox.addMessage("Arena " + seed.name + " Winner: " + winner.name);
-		seed.arena.isOpen = false;
+		seed.isOpen = false;
 		players.forEach(p -> {
 			if (winner == p.alliance) {
 				p.checkReset();
@@ -67,22 +64,24 @@ public class EventController {
 
 		// check open arena
 		if (turnCount > 0 && turnCount % ARENA_INTERVAL == 0) {
-			players.forEach(Player::moveToLobby);
-			isGlobalArenaOpen = true;
-			for (Seed seed : seeds) {
-				seed.arena.isOpen = true;
-				List<Player> seedPlayers = players.stream()
-						.filter(p -> p.alliance.seed == seed)
-						.collect(Collectors.toList());
-				seed.arena.registerPlayers(seedPlayers);
+			if (!map.arena.isOpen) {
+				map.arena.isOpen = true;
+				players.forEach(Player::moveToLobby);
+				for (Seed seed : seeds) {
+					seed.isOpen = true;
+					List<Player> seedPlayers = players.stream()
+							.filter(p -> p.alliance.seed == seed)
+							.collect(Collectors.toList());
+					seed.registerPlayers(seedPlayers);
+				}
 			}
 		}
 
-		if (!isGlobalArenaOpen) return;
+		if (!map.arena.isOpen) return;
 
 		for (Seed seed : seeds) {
-			if (!seed.arena.isOpen) continue;
-			Arena arena = seed.arena;
+			if (!seed.isOpen) continue;
+			Arena arena = map.arena;
 			povRoom = arena.room;
 
 			// fight time
@@ -103,39 +102,39 @@ public class EventController {
 							.filter(alliance -> alliance != winner)
 							.findFirst().orElseThrow();
 					// check ranked alliances
-					arena.rankedAlliances.push(loser);
+					seed.rankedAlliances.push(loser);
 					arena.alliancesInBattle.clear();
 					// clear arena room
 					List<Player> arenaPlayers = List.copyOf(arena.room.getPlayers());
 					for (Player p : arenaPlayers) {
-						p.power = arena.getPower(p.name);
+						p.power = seed.getPower(p.name);
 						p.moveToLobby();
 					}
 					// reward winner
-					if (arena.remainAlliances.isEmpty()) {
+					if (seed.remainAlliances.isEmpty()) {
 						rewardArena(winner, seed);
 					} else {
 						// round winner
-						arena.remainAlliances.push(winner);
+						seed.remainAlliances.push(winner);
 					}
 				}
 			}
 
 			// add alliance to arena battle
-			if (arena.isOpen && arena.alliancesInBattle.isEmpty()) {
-				if (arena.remainAlliances.isEmpty()) {
-					arena.isOpen = false;
+			if (seed.isOpen && arena.alliancesInBattle.isEmpty()) {
+				if (seed.remainAlliances.isEmpty()) {
+					seed.isOpen = false;
 					globalBox.addMessage("Arena " + seed.name + " is empty");
-				} else if (arena.remainAlliances.size() == 1) {
+				} else if (seed.remainAlliances.size() == 1) {
 					// single player
-					Alliance winner = arena.remainAlliances.pop();
+					Alliance winner = seed.remainAlliances.pop();
 					rewardArena(winner, seed);
 				} else {
 					for (int i = 0; i < 2; i++) {
-						arena.alliancesInBattle.add(arena.remainAlliances.pop());
+						arena.alliancesInBattle.add(seed.remainAlliances.pop());
 					}
 					for (Alliance alliance : arena.alliancesInBattle) {
-						List<Player> lobbyPlayers = List.copyOf(seed.lobby.room.getPlayers());
+						List<Player> lobbyPlayers = List.copyOf(map.lobby.room.getPlayers());
 						for (Player p : lobbyPlayers) {
 							if (alliance == p.alliance) {
 								p.moveToArena();
@@ -145,14 +144,13 @@ public class EventController {
 				}
 			}
 
-
-			if (arena.isOpen) {
+			if (seed.isOpen) {
 				break; // one seed at a time
 			}
 		}
 
 		for (Seed seed : seeds) {
-			if (seed.arena.isOpen) {
+			if (seed.isOpen) {
 				return; // still in progress
 			}
 		}
@@ -175,8 +173,8 @@ public class EventController {
 		for (int i = 0; i < seeds.size(); i++) {
 			int dest = i == 0 ? 0 : i - 1;
 			for (int j = 0; j < promoteWinners; j++) {
-				if (!seeds.get(i).arena.rankedAlliances.isEmpty()) {
-					allianceEachSeeds.get(dest).add(seeds.get(i).arena.rankedAlliances.pop());
+				if (!seeds.get(i).rankedAlliances.isEmpty()) {
+					allianceEachSeeds.get(dest).add(seeds.get(i).rankedAlliances.pop());
 				}
 			}
 		}
@@ -185,8 +183,8 @@ public class EventController {
 		for (int i = 0; i < seeds.size(); i++) {
 			while (allianceEachSeeds.get(i).size() < allianceCountEachSeed.get(i)) {
 				for (Seed seed : seeds) {
-					if (!seed.arena.rankedAlliances.isEmpty()) {
-						allianceEachSeeds.get(i).add(seed.arena.rankedAlliances.pop());
+					if (!seed.rankedAlliances.isEmpty()) {
+						allianceEachSeeds.get(i).add(seed.rankedAlliances.pop());
 						break;
 					}
 				}
@@ -197,18 +195,19 @@ public class EventController {
 		for (int i = 0; i < allianceEachSeeds.size(); i++) {
 			Seed seed = seeds.get(i);
 			for (Alliance alliance : allianceEachSeeds.get(i)) {
+				alliance.prevSeed = alliance.seed;
 				alliance.seed = seed;
 			}
 		}
 
 		// do clean lobby
 		seeds.forEach(seed -> {
-			List<Player> lobbyPlayers = List.copyOf(seed.lobby.room.getPlayers());
+			List<Player> lobbyPlayers = List.copyOf(map.lobby.room.getPlayers());
 			lobbyPlayers.forEach(Player::respawn);
 		});
 
 		povRoom = null;
-		isGlobalArenaOpen = false;
+		map.arena.isOpen = false;
 	}
 
 	public void eventCheck() {

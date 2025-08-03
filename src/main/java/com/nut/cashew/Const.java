@@ -20,7 +20,7 @@ public class Const {
 	public static final long BASE_POWER=100;
 	//
 	public static final int TOTAL_ALLIANCE = 15;
-	public static final int ARENA_INTERVAL = 5;
+	public static final int ARENA_INTERVAL = 5000;
 	public static final int ARENA_SAFE_INTERVAL = ARENA_INTERVAL / 5;
 	//
 	public static final int TREASURE_SPAWN_TURN = 2;

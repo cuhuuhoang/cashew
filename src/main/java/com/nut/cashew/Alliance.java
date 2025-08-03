@@ -10,6 +10,7 @@ public class Alliance {
 	public String name;
 	public double taxRate;
 	public Player leader;
+	public Seed prevSeed;
 	public Seed seed;
 
 	public List<Player> players;

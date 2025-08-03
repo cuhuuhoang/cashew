@@ -17,8 +17,8 @@ public class MapData {
 	public final List<Altar> altars;
 	public final List<Treasure> treasures;
 	public final List<Boss> bosses;
-	public final List<Arena> arenas;
-	public final List<Lobby> lobbies;
+	public final Arena arena;
+	public final Lobby lobby;
 
 	@Getter
 	private final Room[][] rooms = new Room[MAP_FULL_WIDTH][MAP_FULL_HEIGHT];
@@ -33,14 +33,8 @@ public class MapData {
 		altars = List.copyOf(placeAltars());
 		treasures = new LinkedList<>();
 		bosses = new LinkedList<>();
-		List<Arena> tmpArenas = new ArrayList<>();
-		List<Lobby> tmpLobbies = new ArrayList<>();
-		for (int i = 0; i < TOTAL_SEED; i++) {
-			tmpArenas.add(placeArena(i));
-			tmpLobbies.add(placeLobby(i));
-		}
-		this.arenas = List.copyOf(tmpArenas);
-		this.lobbies = List.copyOf(tmpLobbies);
+		arena = placeArena();
+		lobby = placeLobby();
 	}
 
 	public Room getRoom(int x, int y) {
@@ -88,15 +82,15 @@ public class MapData {
 		bosses.add(boss);
 	}
 	
-	private Arena placeArena(int index) {
-		Room room = getRoom(index, -OFFSET + 2);
+	private Arena placeArena() {
+		Room room = getRoom(0,-OFFSET + 2);
 		Arena arena = new Arena(room);
 		room.arena = arena;
 		return arena;
 	}
 
-	private Lobby placeLobby(int index) {
-		Room room = getRoom(index, -OFFSET + 1);
+	private Lobby placeLobby() {
+		Room room = getRoom(0, -OFFSET + 1);
 		Lobby lobby = new Lobby(room);
 		room.lobby = lobby;
 		return lobby;

@@ -52,10 +52,13 @@ public class PlayerSet {
 		players = List.copyOf(tmpPlayers);
 		List<Seed> tmpSeeds = new ArrayList<>();
 		for (int i = 0; i < TOTAL_SEED; i++) {
-			tmpSeeds.add(new Seed(i, "S" + (i + 1), map.arenas.get(i), map.lobbies.get(i)));
+			tmpSeeds.add(new Seed(i, "S" + (i + 1)));
 		}
 		seeds = List.copyOf(tmpSeeds);
-		alliances.forEach(a -> a.seed = seeds.get(0));
+		alliances.forEach(a -> {
+			a.seed = seeds.get(0);
+			a.prevSeed = a.seed;
+		});
 	}
 
 	public void doAction() {

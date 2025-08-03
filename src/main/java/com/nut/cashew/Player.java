@@ -101,11 +101,11 @@ public class Player {
 	}
 
 	public void moveToArena() {
-		moveNoCheck(alliance.seed.arena.room);
+		moveNoCheck(map.arena.room);
 	}
 
 	public void moveToLobby() {
-		moveNoCheck(alliance.seed.lobby.room);
+		moveNoCheck(map.lobby.room);
 	}
 
 	private void moveNoCheck(Room room) {
@@ -252,7 +252,7 @@ public class Player {
 	public void checkRespawn() {
 		Room room = map.getRoom(x, y);
 		if (room.arena != null && power < BASE_POWER) {
-			power = room.arena.getPower(name);
+			power = alliance.seed.getPower(name);
 			moveToLobby();
 		}
 		if (power < BASE_POWER) {
