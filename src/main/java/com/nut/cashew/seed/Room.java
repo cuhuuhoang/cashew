@@ -1,13 +1,13 @@
-package com.nut.cashew;
+package com.nut.cashew.seed;
 
-import com.nut.cashew.room.*;
+import com.nut.cashew.seed.room.*;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.nut.cashew.Const.MAX_ALTAR_SAFE_LEVEL;
+import static com.nut.cashew.seed.Const.MAX_ALTAR_SAFE_LEVEL;
 
 public class Room {
 	@Getter

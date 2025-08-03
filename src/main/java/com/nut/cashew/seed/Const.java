@@ -1,6 +1,6 @@
-package com.nut.cashew;
+package com.nut.cashew.seed;
 
-import com.nut.cashew.room.Altar;
+import com.nut.cashew.seed.room.Altar;
 
 public class Const {
 	//

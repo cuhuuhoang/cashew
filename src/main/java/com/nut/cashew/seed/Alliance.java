@@ -1,7 +1,4 @@
-package com.nut.cashew;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
+package com.nut.cashew.seed;
 
 import java.util.LinkedList;
 import java.util.List;

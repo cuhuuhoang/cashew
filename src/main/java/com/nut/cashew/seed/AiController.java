@@ -1,12 +1,12 @@
-package com.nut.cashew;
+package com.nut.cashew.seed;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.nut.cashew.room.Altar;
+import com.nut.cashew.seed.room.Altar;
 import org.javatuples.Pair;
 
-import static com.nut.cashew.Const.MAX_ALTAR_SAFE_LEVEL;
+import static com.nut.cashew.seed.Const.MAX_ALTAR_SAFE_LEVEL;
 
 // threadsafe
 public class AiController {

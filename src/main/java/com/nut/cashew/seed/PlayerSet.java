@@ -1,11 +1,11 @@
-package com.nut.cashew;
+package com.nut.cashew.seed;
 
 import lombok.Getter;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.nut.cashew.Const.*;
+import static com.nut.cashew.seed.Const.*;
 
 public class PlayerSet {
 

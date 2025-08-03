@@ -1,15 +1,15 @@
-package com.nut.cashew;
+package com.nut.cashew.seed;
 
 
-import com.nut.cashew.room.Boss;
-import com.nut.cashew.room.Treasure;
+import com.nut.cashew.seed.room.Boss;
+import com.nut.cashew.seed.room.Treasure;
 import lombok.Getter;
 import org.javatuples.Pair;
 
 import java.util.*;
 
-import static com.nut.cashew.Const.*;
-import static com.nut.cashew.ScreenRender.*;
+import static com.nut.cashew.seed.Const.*;
+import static com.nut.cashew.seed.ScreenRender.*;
 
 public class Player {
 	@Getter

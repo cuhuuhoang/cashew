@@ -1,4 +1,4 @@
-package com.nut.cashew;
+package com.nut.cashew.seed;
 
 import java.util.ArrayList;
 import java.util.List;

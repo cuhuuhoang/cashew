@@ -1,4 +1,4 @@
-package com.nut.cashew;
+package com.nut.cashew.seed;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -6,8 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.nut.cashew.BoxHelper.bottomBorder;
-import static com.nut.cashew.BoxHelper.topBorder;
+import static com.nut.cashew.seed.BoxHelper.bottomBorder;
+import static com.nut.cashew.seed.BoxHelper.topBorder;
 
 public class MessageBox {
 	private final String name;

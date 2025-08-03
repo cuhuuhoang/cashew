@@ -1,16 +1,16 @@
-package com.nut.cashew;
+package com.nut.cashew.seed;
 
-import com.nut.cashew.room.Altar;
-import com.nut.cashew.room.Arena;
+import com.nut.cashew.seed.room.Altar;
+import com.nut.cashew.seed.room.Arena;
 import lombok.Getter;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static com.nut.cashew.Const.*;
-import static com.nut.cashew.Const.MAX_ALTAR_LEVEL;
-import static com.nut.cashew.Const.MAX_ALTAR_SAFE_LEVEL;
+import static com.nut.cashew.seed.Const.*;
+import static com.nut.cashew.seed.Const.MAX_ALTAR_LEVEL;
+import static com.nut.cashew.seed.Const.MAX_ALTAR_SAFE_LEVEL;
 
 public class EventController {
 	private final MapData map;

@@ -1,6 +1,6 @@
-package com.nut.cashew.room;
+package com.nut.cashew.seed.room;
 
-import com.nut.cashew.Room;
+import com.nut.cashew.seed.Room;
 
 public class Boss {
 	public final Room room;

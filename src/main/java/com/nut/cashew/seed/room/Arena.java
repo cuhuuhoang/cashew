@@ -1,7 +1,7 @@
-package com.nut.cashew.room;
+package com.nut.cashew.seed.room;
 
-import com.nut.cashew.Alliance;
-import com.nut.cashew.Room;
+import com.nut.cashew.seed.Alliance;
+import com.nut.cashew.seed.Room;
 
 import java.util.LinkedList;
 import java.util.List;

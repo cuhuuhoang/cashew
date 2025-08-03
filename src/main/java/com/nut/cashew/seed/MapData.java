@@ -1,7 +1,7 @@
-package com.nut.cashew;
+package com.nut.cashew.seed;
 
 
-import com.nut.cashew.room.*;
+import com.nut.cashew.seed.room.*;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -9,7 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import static com.nut.cashew.Const.*;
+import static com.nut.cashew.seed.Const.*;
 
 public class MapData {
 	public static final int OFFSET = MAP_FULL_WIDTH / 2;
