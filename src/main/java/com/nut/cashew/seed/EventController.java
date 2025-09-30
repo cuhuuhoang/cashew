@@ -1,5 +1,6 @@
 package com.nut.cashew.seed;
 
+import com.nut.cashew.root.MessageBox;
 import com.nut.cashew.seed.room.Altar;
 import com.nut.cashew.seed.room.Arena;
 import lombok.Getter;
@@ -23,6 +24,7 @@ public class EventController {
 	private Room povRoom;
 	private final AtomicInteger autoSpeed;
 	public boolean slowNextEvent;
+	public int turnCount;
 
 	public EventController(MapData map, PlayerSet playerSet, ScreenRender screenRender, AtomicInteger autoSpeed) {
 		this.map = map;
@@ -34,7 +36,6 @@ public class EventController {
 		this.globalBox = screenRender.globalBox;
 	}
 
-	public int turnCount;
 
 	private void rewardArena(Alliance winner, Seed seed) {
 		// add to ranked

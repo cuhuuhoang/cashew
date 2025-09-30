@@ -1,15 +1,14 @@
-package com.nut.cashew.seed;
+package com.nut.cashew.twig;
+
 
 import com.nut.cashew.root.Utils;
 import org.javatuples.Pair;
 
-import java.io.InputStream;
-import java.util.List;
+import java.io.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Game {
-
-	private static void handleInput(String line, AtomicInteger autoSpeed, PlayerSet playerSet, ScreenRender screenRender, EventController eventController) {
+	private static void handleInput(String line, AtomicInteger autoSpeed, ScreenRender screenRender, EventController eventController) {
 		if (line == null) return;
 
 		String command = line.trim();
@@ -24,16 +23,24 @@ public class Game {
 		int num = pair.getValue0();
 		String action = pair.getValue1();
 
-		if ("p".equals(action) || action.isEmpty()) {
-			screenRender.setVRoom(0);
-			screenRender.setPOV(playerSet.getPlayers().get(num));
-		} else if ("v".equals(action)) {
-			screenRender.setVRoom(num);
-		} else if ("s".equals(action)) {
+		if ("s".equals(action)) {
 			autoSpeed.set(0);
-		} else if ("n".equals(action)) {
-			autoSpeed.set(0);
-			eventController.slowNextEvent = true;
+		} if ("h".equals(action)) {
+			screenRender.moveLeft();
+		} else if ("j".equals(action)) {
+			screenRender.moveDown();
+		} else if ("k".equals(action)) {
+			screenRender.moveUp();
+		} else if ("l".equals(action)) {
+			screenRender.moveRight();
+		} else if ("r".equals(action)) {
+			eventController.needReset.set(true);
+		} else if ("auto".equals(action)) {
+			if (eventController.autoReset.get()) {
+				eventController.autoReset.set(false);
+			} else {
+				eventController.autoReset.set(true);
+			}
 		}
 	}
 
@@ -48,22 +55,26 @@ public class Game {
 			} catch (Exception ignored) {}
 		}));
 
-		StringBuilder typed = new StringBuilder();
 		InputStream in = System.in;
 
 		// Game objects
 		AtomicInteger autoSpeed = new AtomicInteger(100);
 		MapData map = new MapData();
 		ScreenRender screenRender = new ScreenRender(map);
-		PlayerSet playerSet = new PlayerSet(map, screenRender);
-		screenRender.setPOV(playerSet.getPlayers().get(0));
-		EventController eventController = new EventController(map, playerSet, screenRender, autoSpeed);
+		StringBuilder typed = screenRender.prompt;
+		EventController eventController = new EventController(map, screenRender);
+		eventController.init();
 
 		Thread gameThread = new Thread(() -> {
 			while (true) {
+				eventController.checkReset();
 				// next turn
-				playerSet.doAction();
-				eventController.eventCheck();
+				try {
+					eventController.loop();
+				}catch (Exception ex){
+					ex.printStackTrace();
+					System.exit(1);
+				}
 				try {
 					Thread.sleep(autoSpeed.get());
 				} catch (InterruptedException ignored) {}
@@ -77,10 +88,7 @@ public class Game {
 			while (true) {
 				System.out.print("\033[H\033[2J");
 				System.out.flush();
-				// print
-				List<String> screenBox = screenRender.box(playerSet, eventController, typed.toString());
-				System.out.println(String.join("\n", screenBox));
-
+				System.out.println(screenRender.screenText.get());
 				try {
 					Thread.sleep(100);
 				} catch (InterruptedException ignored) {}
@@ -94,11 +102,11 @@ public class Game {
 			int ch = in.read();
 			if (ch == 3) break; // Ctrl+C to exit
 			if (ch == '\n' || ch == '\r') {// Enter clears typed input
-				handleInput(typed.toString(), autoSpeed, playerSet, screenRender, eventController);
+				handleInput(typed.toString(), autoSpeed, screenRender, eventController);
 				typed.setLength(0);
 			} else {
-				if (ch == 's' || ch == 'n') {
-					handleInput(String.valueOf((char) ch), autoSpeed, playerSet, screenRender, eventController);
+				if (ch == 's' || ch == 'h' || ch == 'j' || ch == 'k' || ch == 'l') {
+					handleInput(String.valueOf((char) ch), autoSpeed, screenRender, eventController);
 				} else {
 					typed.append((char) ch);
 				}

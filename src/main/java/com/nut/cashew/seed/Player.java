@@ -1,6 +1,7 @@
 package com.nut.cashew.seed;
 
 
+import com.nut.cashew.root.MessageBox;
 import com.nut.cashew.seed.room.Boss;
 import com.nut.cashew.seed.room.Treasure;
 import lombok.Getter;

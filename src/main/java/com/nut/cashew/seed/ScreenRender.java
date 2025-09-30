@@ -1,5 +1,6 @@
 package com.nut.cashew.seed;
 
+import com.nut.cashew.root.MessageBox;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -9,6 +10,8 @@ import java.util.Map;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
+import static com.nut.cashew.root.MessageBox.combineColumns;
+import static com.nut.cashew.root.MessageBox.combineRows;
 import static com.nut.cashew.seed.Const.*;
 
 public class ScreenRender {
@@ -62,44 +65,7 @@ public class ScreenRender {
 		this.map = map;
 	}
 
-	@SafeVarargs
-	private static List<String> combineColumns(List<String>... lists) {
-		List<String> result = new LinkedList<>();
-		int maxHeight = Arrays.stream(lists).mapToInt(List::size).max().orElse(0);
-		List<Integer> widthList = Arrays.stream(lists).map(strings -> strings.get(0).length())
-				.collect(Collectors.toList());
-		for (int i = 0; i < maxHeight; i++) {
-			StringBuilder sb = new StringBuilder();
-			for (int j = 0; j < lists.length; j++) {
-				List<String> list = lists[j];
-				if (i < list.size()) {
-					sb.append(list.get(i));
-				} else {
-					sb.append(" ".repeat(widthList.get(j)));
-				}
-			}
-			result.add(sb.toString());
-		}
-		return result;
-	}
 
-	@SafeVarargs
-	private static List<String> combineRows(List<String>... lists) {
-		List<String> result = new LinkedList<>();
-		int maxWidth = Arrays.stream(lists).mapToInt(strings -> strings.get(0).length()).max().orElse(0);
-		for(List<String> list : lists) {
-			for (String s : list) {
-				StringBuilder sb = new StringBuilder();
-				sb.append(s);
-				int length = MessageBox.stripAnsi(s).length();
-				if (length < maxWidth) {
-					sb.append(" ".repeat(maxWidth - length));
-				}
-				result.add(sb.toString());
-			}
-		}
-		return result;
-	}
 
 
 
@@ -263,7 +229,7 @@ public class ScreenRender {
 		}
 	}
 
-	public List<String> box(PlayerSet playerSet, EventController eventController) {
+	public List<String> box(PlayerSet playerSet, EventController eventController, String prompt) {
 		if (povRoomNum == 1) {
 			if (eventController.getPovRoom() != null) {
 				setPOV(eventController.getPovRoom());
@@ -292,6 +258,8 @@ public class ScreenRender {
 				rankBox.box(),
 				allianceBox.box());
 		// Print combined panels
-		return combineColumns(firstCol, secondCol, thirdCol);
+		List<String> screen = combineColumns(firstCol, secondCol, thirdCol);
+		screen.add("> " + prompt);
+		return screen;
 	}
 }
