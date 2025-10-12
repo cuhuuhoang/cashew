@@ -170,11 +170,12 @@ public class Ter {
 			return winningTeam.equals(p.team) ? 100 : -100;
 		}
 		if (after == null) return -5;
-
+		//
 		double d0 = map.distToThrone(before);
 		double d1 = map.distToThrone(after);
 		double progress = (d0 - d1);
 		double reward = -0.1 + 5.0 * progress + 20.0 / (1.0 + d1);
+		//
 		reward += actionScore;
 		return reward;
 	}
@@ -234,7 +235,6 @@ public class Ter {
 
 			boolean done = false;
 			int steps = 0;
-			double episodeReward = 0;
 
 			while (!done && steps < MAX_STEPS) {
 				steps++;
@@ -255,7 +255,6 @@ public class Ter {
 				Room after = player.getCurrentRoom();
 
 				double reward = computeReward(player, map, before, after, actionScore);
-				episodeReward += reward;
 
 				List<Player> newEnemies = player.findOpponents();
 				double newDist = map.distToThrone(player.getCurrentRoom());

@@ -17,8 +17,8 @@ public class Player {
 	public int x;
 	@Getter
 	public int y;
-	public static final double MAX_HEALTH = 20;
-	public static final int MAX_SIGHT = 10;
+	public static final double MAX_HEALTH = 10;
+	public static final int MAX_SIGHT = 15;
 
 	public double health = MAX_HEALTH;
 	public int sight = MAX_SIGHT;
