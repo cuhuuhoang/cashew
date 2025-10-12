@@ -2,8 +2,6 @@ package com.nut.cashew.bud;
 
 import com.nut.cashew.bud.ml.QLAiController;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EventController {
@@ -12,11 +10,8 @@ public class EventController {
 	private final ScreenRender screenRender;
 	public int turnCount;
 	public boolean gameOver = false;
-	public Player winner = null;
 	public AtomicBoolean needReset = new AtomicBoolean(false);
 	public AtomicBoolean autoReset = new AtomicBoolean(false);
-	
-	public Map<String, Integer> aiWinners = new HashMap<>();
 
 	public EventController(MapData map, ScreenRender screenRender) {
 		this.map = map;
@@ -32,7 +27,6 @@ public class EventController {
 	public void init() {
 		// self
 		gameOver = false;
-		winner = null;
 		turnCount = 0;
 		needReset.set(false);
 		// other
@@ -52,6 +46,9 @@ public class EventController {
 	}
 
 	public void loop() {
+		if (gameOver) {
+			return;
+		}
 		turnCount++;
 
 		// make actions
@@ -59,6 +56,17 @@ public class EventController {
 			player.aiController.makeAction();
 			doAction(player);
 		});
+
+		// update throne control each turn
+		map.updateThroneControl();
+
+		// check for victory
+		String winningTeam = map.getWinner();
+		if (winningTeam != null) {
+			gameOver = true;
+			screenRender.globalBox.addMessage("🏆 Team " + winningTeam + " wins by holding the throne!");
+		}
+
 
 		// update screen
 		screenRender.updateScreen(this);

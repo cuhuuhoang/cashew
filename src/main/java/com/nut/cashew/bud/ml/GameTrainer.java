@@ -185,15 +185,36 @@ public class GameTrainer {
 				int ay = (after != null ? after.y : by);
 				char newDir = Character.toLowerCase(a.faceDir);
 
+				// update throne control
+				map.updateThroneControl();
+
 				// reward shaping
 				double reward;
 				boolean moved = (bx != ax) || (by != ay);
 				if (after == null) {
 					reward = -8;         // fell out of map / invalid
-					done = true;
 				} else if (after.throne) {
-					reward = 100;        // success!
-					done = true;
+					// Check who currently owns the throne
+					String winningTeam = map.getWinner();
+
+					if (winningTeam != null) {
+						// Someone has already won (could be us or the opponent)
+						if (winningTeam.equals(player.team)) {
+							// our team won
+							reward = 100;
+						} else {
+							// enemy team won
+							reward = -50; // optional penalty for losing
+						}
+						done = true; // episode ends when any team wins
+
+					} else if (map.throne.getPlayers().stream().anyMatch(p -> p.team.equals(player.team))) {
+						// our team is currently on throne but not yet won
+						reward = 10.0; // per-turn reward for staying on throne
+					} else {
+						// we're on the throne but not counted yet (transition turn)
+						reward = 5.0;
+					}
 				} else {
 					double d0 = distToThrone(map, before);
 					double d1 = distToThrone(map, after);

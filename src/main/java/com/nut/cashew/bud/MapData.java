@@ -1,6 +1,8 @@
 package com.nut.cashew.bud;
 
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.*;
 
 import static com.nut.cashew.root.Utils.generateRandomAnsiColor;
@@ -68,7 +70,7 @@ public class MapData {
 					".....................................\n" +
 					".....................................\n" +
 					".....................................\n" ;
-	public static final List<String> TEAMS = List.of("A");
+	public static final List<String> TEAMS = List.of("A", "B");
 	public static final int TOTAL_PLAYER_EACH_TEAM = 1;
 	public static final int TOTAL_PLAYER = TEAMS.size() * TOTAL_PLAYER_EACH_TEAM;
 	public static final int MAP_FULL_WIDTH = MAP_STRING.split("\n")[0].length();
@@ -80,7 +82,7 @@ public class MapData {
 	public List<Player> players;
 	public Room throne;
 	public Map<String, Room> respawnRooms = new HashMap<>();
-
+	public Map<String, Integer> throneHoldCounter = new HashMap<>();
 	public MapData() {
 		players = new ArrayList<>();
 	}
@@ -104,6 +106,8 @@ public class MapData {
 				}
 			}
 		}
+		throneHoldCounter.clear();
+		for (String team : TEAMS) throneHoldCounter.put(team, 0);
 
 		Queue<String> teams = new ArrayDeque<>();
 		for (int i = 0; i < TOTAL_PLAYER_EACH_TEAM; i++) {
@@ -138,4 +142,31 @@ public class MapData {
 		return ix >= 0 && ix < MAP_FULL_WIDTH && iy >= 0 && iy < MAP_FULL_HEIGHT;
 	}
 
+	public void updateThroneControl() {
+		if (throne == null) return;
+		if (throne.getPlayers().isEmpty()) return;
+
+		// find which team currently holds the throne
+		String currentTeam = throne.getPlayers().get(0).team;
+
+		// increment that team's counter
+		int newCount = throneHoldCounter.getOrDefault(currentTeam, 0) + 1;
+		throneHoldCounter.put(currentTeam, newCount);
+
+		// reset others (only the holder accumulates)
+		for (String team : TEAMS) {
+			if (!team.equals(currentTeam)) {
+				throneHoldCounter.put(team, 0);
+			}
+		}
+	}
+	@Nullable
+	public String getWinner() {
+		for (Map.Entry<String, Integer> entry : throneHoldCounter.entrySet()) {
+			if (entry.getValue() >= 5) {
+				return entry.getKey(); // team name that won
+			}
+		}
+		return null;
+	}
 }
