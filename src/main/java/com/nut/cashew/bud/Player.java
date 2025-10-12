@@ -17,9 +17,12 @@ public class Player {
 	public int x;
 	@Getter
 	public int y;
-	public double health = 100.0;
+	public static final double MAX_HEALTH = 20;
+	public static final int MAX_SIGHT = 10;
+
+	public double health = MAX_HEALTH;
+	public int sight = MAX_SIGHT;
 	public boolean dead = false;
-	public int sight = 15;
 	public char direction = 'n';
 
 	public final String name;
@@ -80,8 +83,17 @@ public class Player {
 	}
 
 	public String render() {
-		return colorCode + "@\u001B[0m";
+		char icon;
+		switch (direction) {
+			case 'n': icon = '^'; break; // U+25B2
+			case 's': icon = 'v'; break; // U+25BC
+			case 'w': icon = '<'; break; // U+25C4
+			case 'e': icon = '>'; break; // U+25BA
+			default:  icon = '@'; break; // fallback
+		}
+		return colorCode + icon + "\u001B[0m";
 	}
+
 
 	public Pair<Boolean, String> tryMove(int x, int y) {
 		if (!map.inMap(x, y)) {

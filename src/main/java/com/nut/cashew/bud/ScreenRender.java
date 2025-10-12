@@ -70,11 +70,11 @@ public class ScreenRender {
 	private void updateMapView(Player player) {
 		Set<String> viewable = null;
 		if (player != null) {
-			viewable = new HashSet<>();
-			List<Room> rooms = player.viewableRooms(player.sight, player.direction);
-			for (Room room : rooms) {
-				viewable.add(room.x + "-" + room.y);
-			}
+//			viewable = new HashSet<>();
+//			List<Room> rooms = player.viewableRooms(player.sight, player.direction);
+//			for (Room room : rooms) {
+//				viewable.add(room.x + "-" + room.y);
+//			}
 		}
 
 		Room[][] rooms = new Room[MAP_VIEW_WIDTH][MAP_VIEW_HEIGHT];
@@ -96,14 +96,14 @@ public class ScreenRender {
 					sb.append(" ");
 				} else {
 					String text = rooms[x][y].render();
-					if (!text.contains("@")) {
-						int mapX = startX + x;
-						int mapY = startY + y;
-						if (viewable != null && viewable.contains(mapX + "-" + mapY) ) {
-							sb.append("+");
-							continue;
-						}
-					}
+//					if (!text.contains("@")) {
+//						int mapX = startX + x;
+//						int mapY = startY + y;
+//						if (viewable != null && viewable.contains(mapX + "-" + mapY) ) {
+//							sb.append("+");
+//							continue;
+//						}
+//					}
 					sb.append(text);
 				}
 			}
