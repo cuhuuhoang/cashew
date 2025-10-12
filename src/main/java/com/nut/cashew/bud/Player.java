@@ -136,24 +136,33 @@ public class Player {
 				.flatMap(r -> r.getPlayers().stream())
 				.filter(p -> p.name.equalsIgnoreCase(targetName))
 				.findFirst().orElse(null);
-		if (player == null || player.team.equalsIgnoreCase(team)) {
+		if (player == null || player.team.equalsIgnoreCase(team) || player.dead) {
 			return 0;
 		}
 		double damage = Math.max(2 * sight - Utils.distance(x, y, player.x, player.y), 1);
 		player.health -= damage;
-		player.checkDeath();
+		boolean death = player.checkDeath();
 		message("attack " + targetName);
-		return damage;
+		double score = 0;
+		if (damage > 0) {
+			score += 10 + damage;
+		}
+		if (death) {
+			score += 10;
+		}
+		return score;
 	}
 
-	public void checkDeath() {
+	public boolean checkDeath() {
 		if (health <= 0) {
 			message("is dead");
 			dead = true;
 			nextAction.clear();
 			room.removePlayer(this);
 			room = null;
+			return true;
 		}
+		return false;
 	}
 
 	public Room getCurrentRoom() {
