@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 /**
  * Q-learning trainer supporting two teams (A/B) and attack actions.
- * - State: (x, y, direction)
+ * - State: (x, y, direction, enemyCount, distBucket)
  * - Action: movement + direction + optional attack target
  * - Shared Q-table between both teams (alternate training)
  */
@@ -23,18 +23,17 @@ public class GameTrainer {
 	private static final double ALPHA = 0.10;          // learning rate
 	private static final double GAMMA = 0.92;          // discount factor
 	private static final double EPSILON_START = 1.00;  // exploration
-	private static final double EPSILON_MIN = 0.05;
-	private static final double EPSILON_DECAY = 0.996; // per episode
+	private static final double EPSILON_MIN = 0.10;    // keep exploring longer
+	private static final double EPSILON_DECAY = 0.999; // slower decay for exploration
 
 	private static final Random RNG = new Random(1337);
 
 	// ==================================================================
-	// Action spec (movement + direction + target)
+	// Action spec (movement + direction)
 	// ==================================================================
 	private static final char[] MOVES = {'h', 'j', 'k', 'l', 's'}; // left, down, up, right, stay
 	private static final char[] DIRS = {'n', 's', 'w', 'e'};
 
-	/** Action specification used by the agent/Q-table (immutable). */
 	@AllArgsConstructor
 	@EqualsAndHashCode(of = {"move", "faceDir"})
 	@ToString
@@ -47,30 +46,38 @@ public class GameTrainer {
 			a.movement = move;
 			a.direction = faceDir;
 			if (self != null && opponent != null) {
-				// always try to attack as possible
-				a.target = opponent.name;
+				// only attack if opponent is visible
+				boolean canSee = self.viewableRooms().stream()
+						.flatMap(r -> r.getPlayers().stream())
+						.anyMatch(p -> p.name.equals(opponent.name));
+				if (canSee) {
+					a.target = opponent.name;
+				}
 			}
 			return a;
 		}
 	}
 
-	/** All 40 actions (5 moves × 4 dirs × 2 attack options) */
 	private static final List<ActionSpec> ALL_ACTIONS = buildAllActions();
 
 	private static List<ActionSpec> buildAllActions() {
-		List<ActionSpec> list = new ArrayList<>(MOVES.length * DIRS.length * 2);
+		List<ActionSpec> list = new ArrayList<>(MOVES.length * DIRS.length);
 		for (char m : MOVES)
 			for (char d : DIRS)
 				list.add(new ActionSpec(m, d));
 		return Collections.unmodifiableList(list);
 	}
 
+	// ==================================================================
+	// StateKey includes throne distance bucket
+	// ==================================================================
 	@AllArgsConstructor
-	@EqualsAndHashCode(of = {"x", "y", "dir", "enemyCount"})
+	@EqualsAndHashCode(of = {"x", "y", "dir", "enemyCount", "distBucket"})
 	public static final class StateKey {
 		final int x, y;
 		final char dir;
 		final int enemyCount;
+		final int distBucket;
 	}
 
 	@AllArgsConstructor
@@ -80,7 +87,9 @@ public class GameTrainer {
 		final ActionSpec a;
 	}
 
-	/** Q-learning table with save/load. */
+	// ==================================================================
+	// Q-learning table with save/load
+	// ==================================================================
 	public static final class RlAgent {
 		private final Map<QKey, Double> q = new HashMap<>();
 
@@ -92,7 +101,6 @@ public class GameTrainer {
 			q.put(new QKey(s, a), v);
 		}
 
-		/** ε-greedy over ALL_ACTIONS */
 		public ActionSpec chooseAction(StateKey s, double epsilon) {
 			if (RNG.nextDouble() < epsilon)
 				return ALL_ACTIONS.get(RNG.nextInt(ALL_ACTIONS.size()));
@@ -112,11 +120,11 @@ public class GameTrainer {
 		public void saveCsv(File file) throws IOException {
 			try (BufferedWriter w = new BufferedWriter(
 					new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
-				w.write("x,y,dir,enemyCount,move,face,q\n");
+				w.write("x,y,dir,enemyCount,distBucket,move,face,q\n");
 				for (Map.Entry<QKey, Double> e : q.entrySet()) {
 					QKey k = e.getKey();
 					double v = e.getValue();
-					w.write(k.s.x + "," + k.s.y + "," + k.s.dir + "," + k.s.enemyCount + ","
+					w.write(k.s.x + "," + k.s.y + "," + k.s.dir + "," + k.s.enemyCount + "," + k.s.distBucket + ","
 							+ k.a.move + "," + k.a.faceDir + "," + v + "\n");
 				}
 			}
@@ -135,10 +143,11 @@ public class GameTrainer {
 					int y = Integer.parseInt(t[1]);
 					char dir = t[2].charAt(0);
 					int enemyCount = Integer.parseInt(t[3]);
-					char move = t[4].charAt(0);
-					char face = t[5].charAt(0);
-					double qv = Double.parseDouble(t[6]);
-					StateKey s = new StateKey(x, y, dir, enemyCount);
+					int distBucket = Integer.parseInt(t[4]);
+					char move = t[5].charAt(0);
+					char face = t[6].charAt(0);
+					double qv = Double.parseDouble(t[7]);
+					StateKey s = new StateKey(x, y, dir, enemyCount, distBucket);
 					ActionSpec a = new ActionSpec(move, face);
 					agent.setQ(s, a, qv);
 				}
@@ -147,6 +156,9 @@ public class GameTrainer {
 		}
 	}
 
+	// ==================================================================
+	// QLAiController (for using trained model)
+	// ==================================================================
 	public static final class QLAiController extends AiController {
 		private final Player player;
 		private final MapData map;
@@ -161,20 +173,15 @@ public class GameTrainer {
 		@Override
 		public void makeAction() {
 			List<Player> opponents = player.findOpponents();
+			double dist = map.distToThrone(player.getCurrentRoom());
+			int distBucket = (int) (dist / 3);
 
 			GameTrainer.StateKey s = new GameTrainer.StateKey(
-					player.getX(), player.getY(), Character.toLowerCase(player.direction), opponents.size());
+					player.getX(), player.getY(), Character.toLowerCase(player.direction),
+					opponents.size(), distBucket);
 
-			GameTrainer.ActionSpec a = agent.chooseAction(s, 0.0); // greedy policy
-
+			GameTrainer.ActionSpec a = agent.chooseAction(s, 0.0);
 			player.addAction(a.toAction(player, !opponents.isEmpty() ? opponents.get(0) : null));
-		}
-
-		private List<Player> findOpponents(Player self) {
-			return self.viewableRooms().stream()
-					.flatMap(r -> r.getPlayers().stream())
-					.filter(p -> !p.team.equals(self.team) && !p.dead)
-					.collect(Collectors.toList());
 		}
 	}
 
@@ -202,6 +209,7 @@ public class GameTrainer {
 			map.init();
 			learner.respawn();
 			opponent.respawn();
+
 			learner.health = 100;
 			opponent.health = 100;
 			learner.dead = false;
@@ -214,9 +222,15 @@ public class GameTrainer {
 			while (!done && steps < MAX_STEPS) {
 				steps++;
 				List<Player> opponents = learner.findOpponents();
-				StateKey s = new StateKey(learner.getX(), learner.getY(), Character.toLowerCase(learner.direction), opponents.size());
 
-				// --- Opponent random move or attack ---
+				double dist = map.distToThrone(learner.getCurrentRoom());
+				int distBucket = (int) (dist / 3);
+
+				StateKey s = new StateKey(
+						learner.getX(), learner.getY(), Character.toLowerCase(learner.direction),
+						opponents.size(), distBucket);
+
+				// --- Opponent random move ---
 				Action oppAct = new Action();
 				oppAct.target = learner.name;
 				char[] oppMoves = {'h', 'j', 'k', 'l', 's'};
@@ -249,39 +263,37 @@ public class GameTrainer {
 
 				map.updateThroneControl();
 
-				// --- Reward ---
+				// --- Reward with stronger gradient & absolute distance bonus ---
 				double reward;
 				boolean moved = (bx != ax) || (by != ay);
 				String winningTeam = map.getWinner();
 
 				if (learner.dead) {
-					reward = -100; // death
+					reward = -100;
 					done = true;
 				} else if (opponent.dead) {
-					reward = 100; // kill opponent
-					done = true;
+					reward = 100;
 				} else if (winningTeam != null) {
 					reward = winningTeam.equals(learner.team) ? 100 : -100;
 					done = true;
 				} else if (a.toAction(learner, opponent).target != null) {
-					reward = 15; // attack action
+					reward = 15;
 				} else if (after == null) {
-					reward = -5;
-				} else if (map.throne.getPlayers().stream().anyMatch(p -> p.team.equals(learner.team))) {
-					reward = 10;
-				} else if (map.throne.getPlayers().stream().anyMatch(p -> p.team.equals(opponent.team))) {
 					reward = -5;
 				} else {
 					double d0 = map.distToThrone(before);
 					double d1 = map.distToThrone(after);
 					double progress = (d0 - d1);
-					reward = -1.0 + 0.6 * progress + (moved ? 0.0 : -2.0);
+					reward = -0.1 + 5.0 * progress + (moved ? 0.0 : -0.5);
+					reward += 20.0 / (1.0 + d1); // proximity bonus
 				}
 
 				episodeReward += reward;
 
-				// --- Q-update ---
-				StateKey s2 = new StateKey(ax, ay, newDir, newOpponents.size());
+				double newDist = map.distToThrone(learner.getCurrentRoom());
+				int newDistBucket = (int) (newDist / 3);
+
+				StateKey s2 = new StateKey(ax, ay, newDir, newOpponents.size(), newDistBucket);
 				double bestNext = Double.NEGATIVE_INFINITY;
 				for (ActionSpec ap : ALL_ACTIONS) {
 					bestNext = Math.max(bestNext, agent.getQ(s2, ap));
