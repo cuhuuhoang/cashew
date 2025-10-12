@@ -132,17 +132,19 @@ public class Player {
 //		message(result.getValue1());
 	}
 
-	public void attack(String targetName) {
+	public double attack(String targetName) {
 		Player player = viewableRooms(sight, direction).stream()
 				.flatMap(r -> r.getPlayers().stream())
 				.filter(p -> p.name.equalsIgnoreCase(targetName))
 				.findFirst().orElse(null);
 		if (player == null || player.team.equalsIgnoreCase(team)) {
-			return;
+			return 0;
 		}
-		player.health -= 2 * sight - Utils.distance(x, y, player.x, player.y) + 1;
+		double damage = Math.max(2 * sight - Utils.distance(x, y, player.x, player.y), 1);
+		player.health -= damage;
 		player.checkDeath();
 		message("attack " + targetName);
+		return damage;
 	}
 
 	public void checkDeath() {
@@ -172,17 +174,14 @@ public class Player {
 		return nextAction.poll();
 	}
 
-	public void doAction() {
+	public double doAction() {
 		if (dead) {
-			return;
+			return 0;
 		}
 		Action action = getAction();
 		if (action == null) {
 //			message("No action");
-			return;
-		}
-		if (action.target != null && !action.target.isEmpty()) {
-			attack(action.target);
+			return 0;
 		}
 		switch (action.movement) {
 			case 'h' -> move(-1, 0);
@@ -193,6 +192,11 @@ public class Player {
 				}
 		}
 		direction = action.direction;
+
+		if (action.target != null && !action.target.isEmpty()) {
+			return attack(action.target);
+		}
+		return 0;
 	}
 
 	public List<Room> viewableRooms() {

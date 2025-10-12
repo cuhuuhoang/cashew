@@ -163,7 +163,7 @@ public class Ter {
 	// ==================================================================
 	// Reward computation (shared helper)
 	// ==================================================================
-	private static double computeReward(Player p, MapData map, Room before, Room after) {
+	private static double computeReward(Player p, MapData map, Room before, Room after, double actionScore) {
 		if (p.dead) return -100;
 		String winningTeam = map.getWinner();
 		if (winningTeam != null) {
@@ -175,8 +175,7 @@ public class Ter {
 		double d1 = map.distToThrone(after);
 		double progress = (d0 - d1);
 		double reward = -0.1 + 5.0 * progress + 20.0 / (1.0 + d1);
-		if (map.throne.getPlayers().stream().anyMatch(pl -> pl.team.equals(p.team)))
-			reward += 10.0;
+		reward += actionScore;
 		return reward;
 	}
 
@@ -251,11 +250,11 @@ public class Ter {
 				player.addAction(a.toAction(player, target));
 				Room before = player.getCurrentRoom();
 
-				player.doAction();
+				double actionScore = player.doAction();
 				map.updateThroneControl();
 				Room after = player.getCurrentRoom();
 
-				double reward = computeReward(player, map, before, after);
+				double reward = computeReward(player, map, before, after, actionScore);
 				episodeReward += reward;
 
 				List<Player> newEnemies = player.findOpponents();
@@ -279,11 +278,7 @@ public class Ter {
 			epsilon = Math.max(EPSILON_MIN, epsilon * EPSILON_DECAY);
 			if (episode % 200 == 0 || episode == EPISODES)
 				agent.saveCsv(modelFile);
-
-			System.out.printf("[%s] Episode %4d | R=%.2f | eps=%.3f%n", name, episode, episodeReward, epsilon);
 		}
-
-		System.out.println("✅ Finished training " + name);
 	}
 
 }

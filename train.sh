@@ -3,4 +3,11 @@
 set -e
 
 ./gradlew shadowJar
-java -cp build/libs/cashew-all.jar com.nut.cashew.bud.Ter
+
+count=${1:-1}
+
+for ((i=1; i<=$count; i++))
+do
+    echo "Running iteration $i of $count"
+    java -cp build/libs/cashew-all.jar com.nut.cashew.bud.Ter
+done
