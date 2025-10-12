@@ -13,13 +13,6 @@ public class Room {
 	public final int y;
 
 	public boolean blocked;
-	public boolean isEmpty() {
-		if (throne) {
-			return players.isEmpty();
-		}
-		return !blocked;
-	}
-
 	public boolean throne;
 
 	public Room(int x, int y) {

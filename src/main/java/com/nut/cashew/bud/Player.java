@@ -86,6 +86,11 @@ public class Player {
 		if (!map.inMap(x, y)) {
 			return new Pair<>(false, "Out of map");
 		}
+		if (map.getRoom(x, y).throne) {
+			if (!map.getRoom(x, y).getPlayers().isEmpty()) {
+				return new Pair<>(false, "Throne is occupied");
+			}
+		}
 		if (map.getRoom(x, y).blocked) {
 			return new Pair<>(false, "Map is blocked");
 		}
