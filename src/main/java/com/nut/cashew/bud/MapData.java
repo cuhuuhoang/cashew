@@ -78,6 +78,7 @@ public class MapData {
 
 	private Room[][] rooms;
 	public List<Player> players;
+	public Room throne;
 	public Map<String, Room> respawnRooms = new HashMap<>();
 
 	public MapData() {
@@ -97,6 +98,7 @@ public class MapData {
 					rooms[x][y].blocked = true;
 				} else if (c == '0') {
 					rooms[x][y].throne = true;
+					throne = rooms[x][y];
 				} else if (TEAMS.contains(String.valueOf(c))) {
 					respawnRooms.put(String.valueOf(c), rooms[x][y]);
 				}

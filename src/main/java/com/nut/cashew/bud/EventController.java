@@ -1,5 +1,7 @@
 package com.nut.cashew.bud;
 
+import com.nut.cashew.bud.ml.QLAiController;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,7 +39,13 @@ public class EventController {
 		map.init();
 		screenRender.reset();
 		map.players.forEach(player -> {
-			player.setAiController(AiController.create(player, map));
+//			player.setAiController(AiController.create(player, map));
+			try {
+				player.setAiController(new QLAiController(player, map, "qtable.csv"));
+
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 			player.setGlobalBox(screenRender.globalBox);
 			player.respawn();
 		});

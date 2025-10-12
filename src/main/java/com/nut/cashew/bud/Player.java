@@ -140,6 +140,7 @@ public class Player {
 	}
 
 	public void message(String message) {
+		if (globalBox == null) return;
 		globalBox.addMessage("[" + name + "] " + message);
 	}
 
