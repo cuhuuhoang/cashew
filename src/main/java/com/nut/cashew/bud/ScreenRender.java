@@ -15,11 +15,11 @@ public class ScreenRender {
 	private final MapData map;
 
 	public static final int MAP_VIEW_WIDTH = 60;
-	public static final int MAP_VIEW_HEIGHT = 38;
+	public static final int MAP_VIEW_HEIGHT = 34;
 	//
-	public final MessageBox globalBox = new MessageBox("Global", 40, 20);
+	public final MessageBox globalBox = new MessageBox("Global", 40, 18);
 	private final MessageBox mapBox = new MessageBox("Map", MAP_VIEW_WIDTH, MAP_VIEW_HEIGHT);
-	public final MessageBox lookBox = new MessageBox("Look", 40, 7);
+	public final MessageBox lookBox = new MessageBox("Look", 40, 5);
 	public final MessageBox infoBox = new MessageBox("Info", 40, 7);
 	public final MessageBox rankBox = new MessageBox("Rank", 40, 15);
 	public final MessageBox winnerBox = new MessageBox("Winner", 40, 15);
@@ -170,7 +170,6 @@ public class ScreenRender {
 			)
 		);
 
-		result.add("> " + prompt);
 		screenText.set(String.join("\n", result));
 	}
 }

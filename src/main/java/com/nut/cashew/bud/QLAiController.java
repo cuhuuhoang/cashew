@@ -20,7 +20,6 @@ public class QLAiController extends AiController {
 		File modelFile = new File(modelDir, player.name + "_q.csv");
 		if (modelFile.exists()) {
 			this.agent = Ter.RlAgent.loadCsv(modelFile);
-			System.out.println("✅ Loaded Q-table for " + player.name);
 		} else {
 			System.err.println("⚠️ No Q-table found for " + player.name + ", starting empty.");
 			this.agent = new Ter.RlAgent();

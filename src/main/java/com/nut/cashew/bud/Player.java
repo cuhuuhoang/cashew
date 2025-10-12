@@ -48,7 +48,6 @@ public class Player {
 	}
 
 	public void respawn() {
-		message("Respawn");
 		nextAction.clear();
 		if (this.room != null) {
 			this.room.removePlayer(this);
