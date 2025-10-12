@@ -145,10 +145,10 @@ public class Player {
 		message("attack " + targetName);
 		double score = 0;
 		if (damage > 0) {
-			score += 10 + damage;
+			score += 100 + damage;
 		}
 		if (death) {
-			score += 10;
+			score += 1000;
 		}
 		return score;
 	}
