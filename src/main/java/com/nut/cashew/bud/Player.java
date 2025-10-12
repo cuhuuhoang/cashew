@@ -1,0 +1,253 @@
+package com.nut.cashew.bud;
+
+
+import com.nut.cashew.root.MessageBox;
+import com.nut.cashew.root.Utils;
+import lombok.Getter;
+import lombok.Setter;
+import org.javatuples.Pair;
+
+import java.util.*;
+
+import static com.nut.cashew.root.Utils.generateRandomAnsiColor;
+
+public class Player {
+	@Getter
+	public int x;
+	@Getter
+	public int y;
+	public double health = 100.0;
+	public boolean dead = false;
+	public int sight = 15;
+	public char direction = 'n';
+
+	public final String name;
+	public final String team;
+	public final MapData map;
+	public final String colorCode;
+	@Setter
+	public AiController aiController;
+	public final Queue<Action> nextAction;
+	@Setter
+	public  MessageBox globalBox;
+	@Getter
+	public Room room;
+
+	public Player(MapData map, String name, String team, String colorCode) {
+		this.name = name;
+		this.team = team;
+		this.map = map;
+		this.nextAction = new ArrayDeque<>();
+		this.room = null;
+		this.colorCode = colorCode;
+		//
+	}
+
+	public void respawn() {
+		message("Respawn");
+		nextAction.clear();
+		if (this.room != null) {
+			this.room.removePlayer(this);
+		}
+		this.room = map.respawnRooms.get(team);
+		this.room.addPlayer(this);
+		this.x = this.room.x;
+		this.y = this.room.y;
+//		List<Pair<Integer, Integer>> positions = new ArrayList<>();
+//		for (int i = 1; i < MapData.MAP_FULL_HEIGHT - 1; i++) {
+//			positions.add(new Pair<>(-MapData.MAP_FULL_WIDTH / 2 + 1, i-MapData.MAP_FULL_HEIGHT / 2));
+//			positions.add(new Pair<>(MapData.MAP_FULL_WIDTH / 2 - 1, i-MapData.MAP_FULL_HEIGHT /2));
+//		}
+//		for (int i = 1; i < MapData.MAP_FULL_WIDTH - 1; i++) {
+//			positions.add(new Pair<>(i-MapData.MAP_FULL_WIDTH / 2, -MapData.MAP_FULL_HEIGHT / 2+1));
+//			positions.add(new Pair<>(i-MapData.MAP_FULL_WIDTH / 2, MapData.MAP_FULL_HEIGHT / 2-1));
+//		}
+//		message("s");
+//		while (true) {
+//			Pair<Integer, Integer> position = positions.get(rand.nextInt(positions.size()));
+//			int px = position.getValue0();
+//			int py = position.getValue1();
+//			Pair<Boolean, String> result = tryMove(px, py);
+//			if (result.getValue0()) {
+//				this.x = px;
+//				this.y = py;
+//				map.getRoom(px, py).addPlayer(this);
+//				room = map.getRoom(px, py);
+//				break;
+//			}
+//		}
+	}
+
+	public String render() {
+		return colorCode + "@\u001B[0m";
+	}
+
+	public Pair<Boolean, String> tryMove(int x, int y) {
+		if (!map.inMap(x, y)) {
+			return new Pair<>(false, "Out of map");
+		}
+		if (map.getRoom(x, y).blocked) {
+			return new Pair<>(false, "Map is blocked");
+		}
+		return new Pair<>(true, "Moved " + x + "," + y);
+	}
+
+	private void moveNoCheck(Room room) {
+		moveNoCheck(room.x, room.y);
+	}
+
+	private void moveNoCheck(int newX, int newY) {
+		map.getRoom(x, y).removePlayer(this);
+		x = newX;
+		y = newY;
+		map.getRoom(x, y).addPlayer(this);
+		this.room = map.getRoom(x, y);
+	}
+
+	public void move(int dx, int dy) {
+		int newX = x + dx;
+		int newY = y + dy;
+		Pair<Boolean, String> result = tryMove(newX, newY);
+		if (result.getValue0()) {
+			moveNoCheck(newX, newY);
+		}
+//		message(result.getValue1());
+	}
+
+	public void attack(String targetName) {
+		Player player = map.players.stream().filter(p -> p.name.equalsIgnoreCase(targetName))
+				.findFirst().orElse(null);
+		if (player == null || player.team.equalsIgnoreCase(team)) {
+			return;
+		}
+		player.health -= 2 * sight - Utils.distance(x, y, player.x, player.y) + 1;
+		player.checkDeath();
+		message("attack " + targetName);
+	}
+
+	public void checkDeath() {
+		if (health <= 0) {
+			message("is dead");
+			dead = true;
+			nextAction.clear();
+			room.removePlayer(this);
+			room = null;
+		}
+	}
+
+	public Room getCurrentRoom() {
+		return map.getRoom(x, y);
+	}
+
+	public void message(String message) {
+		globalBox.addMessage("[" + name + "] " + message);
+	}
+
+	public void addAction(Action action) {
+		nextAction.add(action);
+	}
+
+	private Action getAction() {
+		return nextAction.poll();
+	}
+
+	public void doAction() {
+		if (dead) {
+			return;
+		}
+		Action action = getAction();
+		if (action == null) {
+//			message("No action");
+			return;
+		}
+//		if (action.target != null && !action.target.isEmpty()) {
+//			attack(action.target);
+//		}
+		switch (action.movement) {
+			case 'h' -> move(-1, 0);
+			case 'j' -> move(0, 1);
+			case 'k' -> move(0, -1);
+			case 'l' -> move(1, 0);
+			default -> {//stay
+				}
+		}
+		direction = action.direction;
+	}
+
+	public List<Room> viewableRooms() {
+		return viewableRooms(sight, direction);
+	}
+
+	public List<Room> viewableRooms(int sightRange, char direction) {
+		List<Room> visible = new ArrayList<>();
+
+		// Always see your current tile
+		if (room != null) {
+			visible.add(room);
+		} else {
+			return visible;
+		}
+
+		for (int tx = x - sightRange; tx <= x + sightRange; tx++) {
+			for (int ty = y - sightRange; ty <= y + sightRange; ty++) {
+				Room target = map.getRoom(tx, ty);
+				if (target == null) continue;
+
+				int dx = tx - x;
+				int dy = ty - y;
+
+				// Optional circular vision
+				if (dx * dx + dy * dy > sightRange * sightRange) continue;
+
+				// Filter by direction
+				if (!inViewCone(direction, dx, dy)) continue;
+
+				if (canSee(map, room, target)) {
+					visible.add(target);
+				}
+			}
+		}
+
+		return visible;
+	}
+
+	private boolean inViewCone(char direction, int dx, int dy) {
+		switch (Character.toLowerCase(direction)) {
+			case 'n': return dy <= 0 && Math.abs(dx) <= Math.abs(dy);
+			case 's': return dy >= 0 && Math.abs(dx) <= Math.abs(dy);
+			case 'w': return dx <= 0 && Math.abs(dy) <= Math.abs(dx);
+			case 'e': return dx >= 0 && Math.abs(dy) <= Math.abs(dx);
+			default:  return true; // fallback if invalid direction
+		}
+	}
+
+	private boolean canSee(MapData map, Room from, Room to) {
+		int x0 = from.x;
+		int y0 = from.y;
+		int x1 = to.x;
+		int y1 = to.y;
+
+		int dx = Math.abs(x1 - x0);
+		int dy = Math.abs(y1 - y0);
+		int sx = Integer.compare(x1, x0);
+		int sy = Integer.compare(y1, y0);
+		int err = dx - dy;
+
+		while (true) {
+			Room current = map.getRoom(x0, y0);
+			if (current == null) return false;
+
+			if (x0 == x1 && y0 == y1) return true;
+			if (current.blocked && current != from) return false;
+
+			int e2 = 2 * err;
+			if (e2 > -dy) { err -= dy; x0 += sx; }
+			if (e2 <  dx) { err += dx; y0 += sy; }
+
+			if (!map.inMap(x0, y0)) return false;
+		}
+	}
+
+
+
+}

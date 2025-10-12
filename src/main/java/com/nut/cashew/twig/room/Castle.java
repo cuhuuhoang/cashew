@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Random;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.nut.cashew.root.Utils.generateRandomAnsiColor;
 
 public class Castle {
 
@@ -90,14 +91,6 @@ public class Castle {
 		attack.troops.addAll(troops);
 		attacks.add(attack);
 		target.attackers.add(attack);
-	}
-
-	private static String generateRandomAnsiColor() {
-		Random rand = new Random();
-		int r = rand.nextInt(256);
-		int g = rand.nextInt(256);
-		int b = rand.nextInt(256);
-		return String.format("\u001B[38;2;%d;%d;%dm", r, g, b); // ANSI 24-bit color code
 	}
 
 	public String render() {
