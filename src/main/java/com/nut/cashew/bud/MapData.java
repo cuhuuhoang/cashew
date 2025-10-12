@@ -169,4 +169,11 @@ public class MapData {
 		}
 		return null;
 	}
+
+	public double distToThrone(Room room) {
+		if (throne == null || room == null) return 0.0;
+		double dx = throne.x - room.x;
+		double dy = throne.y - room.y;
+		return Math.sqrt(dx * dx + dy * dy);
+	}
 }

@@ -1,6 +1,5 @@
 package com.nut.cashew.bud;
 
-import com.nut.cashew.bud.ml.QLAiController;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -35,7 +34,7 @@ public class EventController {
 		map.players.forEach(player -> {
 //			player.setAiController(AiController.create(player, map));
 			try {
-				player.setAiController(new QLAiController(player, map, "qtable.csv"));
+				player.setAiController(new GameTrainer.QLAiController(player, map, "qtable.csv"));
 
 			} catch (Exception e) {
 				throw new RuntimeException(e);

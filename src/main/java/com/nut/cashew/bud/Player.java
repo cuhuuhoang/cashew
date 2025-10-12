@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.javatuples.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.nut.cashew.root.Utils.generateRandomAnsiColor;
 
@@ -120,7 +121,9 @@ public class Player {
 	}
 
 	public void attack(String targetName) {
-		Player player = map.players.stream().filter(p -> p.name.equalsIgnoreCase(targetName))
+		Player player = viewableRooms(sight, direction).stream()
+				.flatMap(r -> r.getPlayers().stream())
+				.filter(p -> p.name.equalsIgnoreCase(targetName))
 				.findFirst().orElse(null);
 		if (player == null || player.team.equalsIgnoreCase(team)) {
 			return;
@@ -166,9 +169,9 @@ public class Player {
 //			message("No action");
 			return;
 		}
-//		if (action.target != null && !action.target.isEmpty()) {
-//			attack(action.target);
-//		}
+		if (action.target != null && !action.target.isEmpty()) {
+			attack(action.target);
+		}
 		switch (action.movement) {
 			case 'h' -> move(-1, 0);
 			case 'j' -> move(0, 1);
@@ -255,5 +258,11 @@ public class Player {
 	}
 
 
+	public List<Player> findOpponents() {
+		return this.viewableRooms().stream()
+				.flatMap(r -> r.getPlayers().stream())
+				.filter(p -> !p.team.equals(team) && !p.dead)
+				.collect(Collectors.toList());
+	}
 
 }
