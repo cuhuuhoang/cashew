@@ -10,8 +10,6 @@ import org.javatuples.Pair;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.nut.cashew.root.Utils.generateRandomAnsiColor;
-
 public class Player {
 	@Getter
 	public int x;
@@ -24,6 +22,7 @@ public class Player {
 	public int sight = MAX_SIGHT;
 	public boolean dead = false;
 	public char direction = 'n';
+	public int killCount = 0;
 
 	public final String name;
 	public final String team;
@@ -56,44 +55,21 @@ public class Player {
 		this.room.addPlayer(this);
 		this.x = this.room.x;
 		this.y = this.room.y;
-//		List<Pair<Integer, Integer>> positions = new ArrayList<>();
-//		for (int i = 1; i < MapData.MAP_FULL_HEIGHT - 1; i++) {
-//			positions.add(new Pair<>(-MapData.MAP_FULL_WIDTH / 2 + 1, i-MapData.MAP_FULL_HEIGHT / 2));
-//			positions.add(new Pair<>(MapData.MAP_FULL_WIDTH / 2 - 1, i-MapData.MAP_FULL_HEIGHT /2));
-//		}
-//		for (int i = 1; i < MapData.MAP_FULL_WIDTH - 1; i++) {
-//			positions.add(new Pair<>(i-MapData.MAP_FULL_WIDTH / 2, -MapData.MAP_FULL_HEIGHT / 2+1));
-//			positions.add(new Pair<>(i-MapData.MAP_FULL_WIDTH / 2, MapData.MAP_FULL_HEIGHT / 2-1));
-//		}
-//		message("s");
-//		while (true) {
-//			Pair<Integer, Integer> position = positions.get(rand.nextInt(positions.size()));
-//			int px = position.getValue0();
-//			int py = position.getValue1();
-//			Pair<Boolean, String> result = tryMove(px, py);
-//			if (result.getValue0()) {
-//				this.x = px;
-//				this.y = py;
-//				map.getRoom(px, py).addPlayer(this);
-//				room = map.getRoom(px, py);
-//				break;
-//			}
-//		}
 	}
 
 	public String render() {
 		char icon;
 		switch (direction) {
-			case 'n': icon = '^'; break; // U+25B2
-			case 's': icon = 'v'; break; // U+25BC
-			case 'w': icon = '<'; break; // U+25C4
-			case 'e': icon = '>'; break; // U+25BA
-			default:  icon = '@'; break; // fallback
+			case 'n': icon = '^'; break;
+			case 's': icon = 'v'; break;
+			case 'w': icon = '<'; break;
+			case 'e': icon = '>'; break;
+			default:  icon = '@'; break;
 		}
 		return coloredText(icon + "");
 	}
 
-	private String coloredText(String text) {
+	public String coloredText(String text) {
 		return colorCode + text + "\u001B[0m";
 	}
 
@@ -156,6 +132,7 @@ public class Player {
 			}
 			if (death) {
 				score += 100;
+				killCount++;
 			}
 		}
 		return score;

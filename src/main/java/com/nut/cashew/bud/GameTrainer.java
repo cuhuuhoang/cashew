@@ -219,9 +219,6 @@ public class GameTrainer {
 		MapData map = new MapData();
 		map.init();
 
-//		Player playerA = map.players.stream().filter(p -> p.team.equals("A")).findFirst().orElseThrow();
-//		Player playerB = map.players.stream().filter(p -> p.team.equals("B")).findFirst().orElseThrow();
-
 		RlAgent agent = RlAgent.loadCsv(new File(modelPath));
 
 		double epsilon = EPSILON_START;
@@ -269,8 +266,17 @@ public class GameTrainer {
 					opponent.addAction(oppAct);
 				}
 
-				// --- Learner action ---
-				ActionSpec a = agent.chooseAction(s, epsilon);
+				// --- Learner action (ε-greedy + persistent noise) ---
+				double effectiveEpsilon = epsilon + RNG.nextDouble() * 0.05; // small extra noise
+				ActionSpec a;
+
+				if (RNG.nextDouble() < 0.02) {
+					// Force random exploration every ~2% of steps
+					a = ALL_ACTIONS.get(RNG.nextInt(ALL_ACTIONS.size()));
+				} else {
+					a = agent.chooseAction(s, Math.min(1.0, effectiveEpsilon));
+				}
+
 				learner.addAction(a.toAction(learner, targets.isEmpty() ? null : targets.get(0)));
 
 				// Perform actions

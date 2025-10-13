@@ -3,6 +3,7 @@ package com.nut.cashew.bud;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EventController {
@@ -13,6 +14,7 @@ public class EventController {
 	public boolean gameOver = false;
 	public AtomicBoolean needReset = new AtomicBoolean(false);
 	public AtomicBoolean autoReset = new AtomicBoolean(false);
+	public Map<String, Integer> winners = new java.util.HashMap<>();
 
 	public EventController(MapData map, ScreenRender screenRender) {
 		this.map = map;
@@ -83,6 +85,7 @@ public class EventController {
 				screenRender.globalBox.addMessage("🎉 It's a tie!");
 			} else {
 				screenRender.globalBox.addMessage("🏆 Team " + winningTeam + " wins by holding the throne!");
+				winners.compute(winningTeam, (k, v) -> v == null ? 1 : v + 1);
 			}
 		}
 

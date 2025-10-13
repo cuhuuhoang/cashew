@@ -2,10 +2,7 @@ package com.nut.cashew.bud;
 
 import com.nut.cashew.root.MessageBox;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.nut.cashew.root.MessageBox.combineColumns;
@@ -118,36 +115,25 @@ public class ScreenRender {
 	
 	private void updateRankBox(List<Player> players, EventController eventController) {
 		rankBox.clear();
-//		Map<Castle, Integer> castlePower = new HashMap<>();
-//		for (Castle castle : castles) {
-//			if (castle.getMaster() == castle && !castle.isMine) {
-//				castlePower.put(castle, castle.maxRally());
-//			}
-//		}
-//		castlePower.entrySet().stream()
-//				.sorted(Map.Entry.<Castle, Integer>comparingByValue().reversed())
-//				.limit(rankBox.getHeight())
-//				.forEach(entry -> rankBox.addMessage(entry.getKey().render() + " " + entry.getKey().name +
-//						": " + entry.getValue() + " " + entry.getKey().getFreeTroops().size() + " " + entry.getKey().aiController.name()));
-
-//		if (!addedWinner && eventController.gameOver) {
-//			addedWinner = true;
-//			Castle winner = eventController.winner;
-//			winnerBox.addMessage("Winner: " + eventController.turnCount + " " + winner.aiController.name());
-//		}
-		players.forEach(player -> {
-			if (!player.dead) {
-				rankBox.addMessage(player.name + ": " + player.health);
-			}
-		});
+		Map<Player, Integer> playerKills = new HashMap<>();
+		for (Player player : players) {
+			playerKills.put(player, player.killCount);
+		}
+		playerKills.entrySet().stream()
+				.sorted(Map.Entry.<Player, Integer>comparingByValue().reversed())
+				.limit(rankBox.getHeight())
+				.forEach(entry -> {
+					Player player = entry.getKey();
+					rankBox.addMessage(player.coloredText(player.name) + " H:" + player.health + " K: " + player.killCount);
+				});
 		winnerBox.clear();
-//		int maxValue = eventController.aiWinners.values().stream().max(Integer::compareTo).orElse(0);
-//		int width = String.valueOf(maxValue).length();
-//		eventController.aiWinners.entrySet().stream()
-//				.sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-//				.limit(winnerBox.getHeight())
-//				.forEach(entry -> winnerBox.addMessage(String.format("%0" + width + "d", entry.getValue())
-//						+ ": " + entry.getKey()));
+		int maxValue = eventController.winners.values().stream().max(Integer::compareTo).orElse(0);
+		int width = String.valueOf(maxValue).length();
+		eventController.winners.entrySet().stream()
+				.sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+				.limit(winnerBox.getHeight())
+				.forEach(entry -> winnerBox.addMessage(String.format("%0" + width + "d", entry.getValue())
+						+ ": " + entry.getKey()));
 	}
 
 	public void updateScreen(EventController eventController) {
