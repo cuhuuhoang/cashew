@@ -66,6 +66,11 @@ public class Game {
 		EventController eventController = new EventController(map, screenRender);
 		eventController.init();
 
+		if (args.length > 0 && "auto".equals(args[0])) {
+			eventController.autoReset.set(true);
+		}
+
+
 		Thread gameThread = new Thread(() -> {
 			while (true) {
 				eventController.checkReset();

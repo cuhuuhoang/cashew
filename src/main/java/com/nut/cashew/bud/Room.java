@@ -12,6 +12,7 @@ public class Room {
 	public final int x;
 	public final int y;
 
+	public char block;
 	public boolean blocked;
 	public boolean throne;
 	public boolean lava;
@@ -26,10 +27,10 @@ public class Room {
 
 	public String render() {
 		if (blocked) {
-			return "\u001B[31mX\u001B[0m";
+			return "\u001B[32m" + block +"\u001B[0m";
 		}
 		if (throne) {
-			return "\u001B[31m0\u001B[0m";
+			return "\u001B[31m♕\u001B[0m";
 		}
 		if (!players.isEmpty()) {
 			try {

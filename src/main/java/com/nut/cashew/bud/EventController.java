@@ -59,7 +59,10 @@ public class EventController {
 		List<Room> lavaRooms = new LinkedList<>(map.getLavaRooms());
 		lavaRooms.forEach(room -> {
 			List<Player> players = new LinkedList<>(room.getPlayers());
-			players.forEach(player -> player.damageSelf(10));
+			players.forEach(player -> {
+				screenRender.globalBox.addMessage(player.name + " is hit by lava!");
+				player.damageSelf(10);
+			});
 		});
 
 
@@ -76,7 +79,11 @@ public class EventController {
 		String winningTeam = map.getWinner();
 		if (winningTeam != null) {
 			gameOver = true;
-			screenRender.globalBox.addMessage("🏆 Team " + winningTeam + " wins by holding the throne!");
+			if ("tie".equals(winningTeam)) {
+				screenRender.globalBox.addMessage("🎉 It's a tie!");
+			} else {
+				screenRender.globalBox.addMessage("🏆 Team " + winningTeam + " wins by holding the throne!");
+			}
 		}
 
 

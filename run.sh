@@ -3,4 +3,4 @@
 set -e
 
 ./gradlew shadowJar
-java -cp build/libs/cashew-all.jar com.nut.cashew.Game
+java -cp build/libs/cashew-all.jar com.nut.cashew.Game $@

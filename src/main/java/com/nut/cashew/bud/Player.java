@@ -90,7 +90,11 @@ public class Player {
 			case 'e': icon = '>'; break; // U+25BA
 			default:  icon = '@'; break; // fallback
 		}
-		return colorCode + icon + "\u001B[0m";
+		return coloredText(icon + "");
+	}
+
+	private String coloredText(String text) {
+		return colorCode + text + "\u001B[0m";
 	}
 
 
@@ -183,7 +187,7 @@ public class Player {
 
 	public void message(String message) {
 		if (globalBox == null) return;
-		globalBox.addMessage("[" + name + "] " + message);
+		globalBox.addMessage("[" + coloredText(name) + "] " + message);
 	}
 
 	public void addAction(Action action) {
