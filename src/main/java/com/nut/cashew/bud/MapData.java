@@ -9,48 +9,9 @@ import static com.nut.cashew.root.Utils.generateRandomAnsiColor;
 
 public class MapData {
 
-//	public static final String MAP_STRING =
-//			"............................................................" +
-//					"............................................................" +
-//					"............................................................" +
-//					"......xxxxxx......xxxxxx.......xxxxxxx........xxxxxxx......." +
-//					"......xxxxxx......xxxxxx.......xxxxxxx........xxxxxxx......." +
-//					"......xxxxxx......xxxxxx.......xxxxxxx........xxxxxxx......." +
-//					"......xxxxxx......xxxxxx.......xxxxxxx........xxxxxxx......." +
-//					"............................................................" +
-//					"............................................................" +
-//					"............................................................" +
-//					"............................................................" +
-//					"............xxxxxxxxx................xxxxxxxxxx............." +
-//					"............xxxxxxxxx................xxxxxxxxxx............." +
-//					"............xxxxxxxxx................xxxxxxxxxx............." +
-//					"............xxxxxxxxx................xxxxxxxxxx............." +
-//					"............xxxxxxxxx................xxxxxxxxxx............." +
-//					"............................................................" +
-//					"............................................................" +
-//					"............................................................" +
-//					"...............xxxxxxxxxxxxxxxxxxxxxxxxxxx.................." +
-//					"...............xxxxxxxxxxxxxxxxxxxxxxxxxxx.................." +
-//					"............................................................" +
-//					"............................................................" +
-//					"............................................................" +
-//					"............................................................" +
-//					"............xxxxxxxxx................xxxxxxxxxx............." +
-//					"............xxxxxxxxx................xxxxxxxxxx............." +
-//					"............xxxxxxxxx................xxxxxxxxxx............." +
-//					"............xxxxxxxxx................xxxxxxxxxx............." +
-//					"............................................................" +
-//					"............................................................" +
-//					"............................................................" +
-//					"............................................................" +
-//					"......xxxxxx......xxxxxx.......xxxxxxx........xxxxxxx......." +
-//					"......xxxxxx......xxxxxx.......xxxxxxx........xxxxxxx......." +
-//					"......xxxxxx......xxxxxx.......xxxxxxx........xxxxxxx......." +
-//					"............................................................" +
-//					"............................................................";
 	public static final String MAP_STRING =
 					".....................................\n" +
-					".....................................\n" +
+					"..................C..................\n" +
 					".....................................\n" +
 					".....xxx.........xxx.........xxx.....\n" +
 					".....xxx.........xxx.........xxx.....\n" +
@@ -68,9 +29,9 @@ public class MapData {
 					".....xxx.........xxx.........xxx.....\n" +
 					".....xxx.........xxx.........xxx.....\n" +
 					".....................................\n" +
-					".....................................\n" +
+					"..................D..................\n" +
 					".....................................\n" ;
-	public static final List<String> TEAMS = List.of("A", "B");
+	public static final List<String> TEAMS = List.of("A", "B", "C", "D");
 	public static final int TOTAL_PLAYER_EACH_TEAM = 1;
 	public static final int TOTAL_PLAYER = TEAMS.size() * TOTAL_PLAYER_EACH_TEAM;
 	public static final int MAP_FULL_WIDTH = MAP_STRING.split("\n")[0].length();
@@ -176,4 +137,44 @@ public class MapData {
 		double dy = throne.y - room.y;
 		return Math.sqrt(dx * dx + dy * dy);
 	}
+
+	public void placeLava() {
+		// Collect all candidate rooms (non-blocked, non-throne, non-lava)
+		List<Room> candidates = new ArrayList<>();
+		for (int x = 0; x < MAP_FULL_WIDTH; x++) {
+			for (int y = 0; y < MAP_FULL_HEIGHT; y++) {
+				Room room = rooms[x][y];
+				if (room.blocked || room.throne || room.lava) continue;
+				candidates.add(room);
+			}
+		}
+
+		if (candidates.isEmpty()) return;
+
+		// Find the maximum distance from the throne among all valid rooms
+		double maxDist = candidates.stream()
+				.mapToDouble(this::distToThrone)
+				.max()
+				.orElse(0);
+
+		// Apply lava to rooms that are approximately at this max distance (outer ring)
+		for (Room room : candidates) {
+			double d = distToThrone(room);
+			if (Math.abs(d - maxDist) < 1.0) { // small tolerance for ring shape
+				room.lava = true;
+			}
+		}
+	}
+
+	public List<Room> getLavaRooms() {
+		List<Room> lavaRooms = new ArrayList<>();
+		for (int x = 0; x < MAP_FULL_WIDTH; x++) {
+			for (int y = 0; y < MAP_FULL_HEIGHT; y++) {
+				Room room = rooms[x][y];
+				if (room.lava) lavaRooms.add(room);
+			}
+		}
+		return lavaRooms;
+	}
+
 }

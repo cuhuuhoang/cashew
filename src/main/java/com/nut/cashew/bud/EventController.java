@@ -1,6 +1,8 @@
 package com.nut.cashew.bud;
 
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EventController {
@@ -49,6 +51,17 @@ public class EventController {
 			return;
 		}
 		turnCount++;
+
+		if (turnCount > 5 && turnCount % 5 == 0) {
+			map.placeLava();
+		}
+
+		List<Room> lavaRooms = new LinkedList<>(map.getLavaRooms());
+		lavaRooms.forEach(room -> {
+			List<Player> players = new LinkedList<>(room.getPlayers());
+			players.forEach(player -> player.damageSelf(10));
+		});
+
 
 		// make actions
 		map.players.forEach(player -> {

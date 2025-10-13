@@ -73,13 +73,15 @@ public class GameTrainer {
 	// StateKey includes throne distance bucket
 	// ==================================================================
 	@AllArgsConstructor
-	@EqualsAndHashCode(of = {"x", "y", "dir", "enemyCount", "distBucket"})
+	@EqualsAndHashCode(of = {"x", "y", "dir", "enemyCount", "distBucket", "turnBucket"})
 	public static final class StateKey {
 		final int x, y;
 		final char dir;
 		final int enemyCount;
 		final int distBucket;
+		final int turnBucket;
 	}
+
 
 	@AllArgsConstructor
 	@EqualsAndHashCode(of = {"s", "a"})
@@ -123,13 +125,24 @@ public class GameTrainer {
 			Files.deleteIfExists(tmpFile.toPath());
 			try (BufferedWriter w = new BufferedWriter(
 					new OutputStreamWriter(new FileOutputStream(tmpFile), StandardCharsets.UTF_8))) {
-				w.write("x,y,dir,enemyCount,distBucket,move,face,q\n");
+
+				w.write("x,y,dir,enemyCount,distBucket,turnBucket,move,face,q\n");
+
 				for (Map.Entry<QKey, Double> e : q.entrySet()) {
 					QKey k = e.getKey();
 					double v = e.getValue();
-					w.write(k.s.x + "," + k.s.y + "," + k.s.dir + "," + k.s.enemyCount + "," + k.s.distBucket + ","
-							+ k.a.move + "," + k.a.faceDir + "," + v + "\n");
+
+					w.write(k.s.x + "," +
+							k.s.y + "," +
+							k.s.dir + "," +
+							k.s.enemyCount + "," +
+							k.s.distBucket + "," +
+							k.s.turnBucket + "," +
+							k.a.move + "," +
+							k.a.faceDir + "," +
+							v + "\n");
 				}
+
 				w.flush();
 			}
 			Files.deleteIfExists(file.toPath());
@@ -152,10 +165,11 @@ public class GameTrainer {
 					char dir = t[2].charAt(0);
 					int enemyCount = Integer.parseInt(t[3]);
 					int distBucket = Integer.parseInt(t[4]);
-					char move = t[5].charAt(0);
-					char face = t[6].charAt(0);
-					double qv = Double.parseDouble(t[7]);
-					StateKey s = new StateKey(x, y, dir, enemyCount, distBucket);
+					int turnBucket = Integer.parseInt(t[5]);
+					char move = t[6].charAt(0);
+					char face = t[7].charAt(0);
+					double qv = Double.parseDouble(t[8]);
+					StateKey s = new StateKey(x, y, dir, enemyCount, distBucket, turnBucket);
 					ActionSpec a = new ActionSpec(move, face);
 					agent.setQ(s, a, qv);
 				}
@@ -171,6 +185,7 @@ public class GameTrainer {
 		private final Player player;
 		private final MapData map;
 		private final RlAgent agent;
+		private int turnCounter = 0;
 
 		public QLAiController(Player player, MapData map) throws Exception {
 			this.player = player;
@@ -180,13 +195,15 @@ public class GameTrainer {
 
 		@Override
 		public void makeAction() {
+			turnCounter++;
 			List<Player> opponents = player.findOpponents();
 			double dist = map.distToThrone(player.getCurrentRoom());
 			int distBucket = (int) (dist / 3);
+			int turnBucket = turnCounter / 10;
 
 			GameTrainer.StateKey s = new GameTrainer.StateKey(
 					player.getX(), player.getY(), Character.toLowerCase(player.direction),
-					opponents.size(), distBucket);
+					opponents.size(), distBucket, turnBucket);
 
 			GameTrainer.ActionSpec a = agent.chooseAction(s, 0.0);
 			player.addAction(a.toAction(player, !opponents.isEmpty() ? opponents.get(0) : null));
@@ -202,65 +219,66 @@ public class GameTrainer {
 		MapData map = new MapData();
 		map.init();
 
-		Player playerA = map.players.stream().filter(p -> p.team.equals("A")).findFirst().orElseThrow();
-		Player playerB = map.players.stream().filter(p -> p.team.equals("B")).findFirst().orElseThrow();
+//		Player playerA = map.players.stream().filter(p -> p.team.equals("A")).findFirst().orElseThrow();
+//		Player playerB = map.players.stream().filter(p -> p.team.equals("B")).findFirst().orElseThrow();
 
 		RlAgent agent = RlAgent.loadCsv(new File(modelPath));
 
 		double epsilon = EPSILON_START;
 
 		for (int episode = 1; episode <= EPISODES; episode++) {
-			String trainTeam = (episode % 2 == 0) ? "A" : "B";
-			Player learner = trainTeam.equals("A") ? playerA : playerB;
-			Player opponent = trainTeam.equals("A") ? playerB : playerA;
+			String trainTeam = MapData.TEAMS.get(episode % MapData.TEAMS.size());
+			Player learner = map.players.stream().filter(p -> p.team.equals(trainTeam)).findFirst().orElseThrow();
+			List<Player> opponents = map.players.stream().filter(p -> !p.team.equals(trainTeam)).collect(Collectors.toList());
 
 			map.init();
-			learner.respawn();
-			opponent.respawn();
-
-			learner.health = Player.MAX_HEALTH;
-			opponent.health = Player.MAX_HEALTH;
-			learner.dead = false;
-			opponent.dead = false;
+			map.players.forEach(player -> {
+				player.respawn();
+				player.health = Player.MAX_HEALTH;
+				player.dead = false;
+			});
 
 			boolean done = false;
 			int steps = 0;
 
 			while (!done && steps < MAX_STEPS) {
 				steps++;
-				List<Player> opponents = learner.findOpponents();
+				List<Player> targets = learner.findOpponents();
 
 				double dist = map.distToThrone(learner.getCurrentRoom());
 				int distBucket = (int) (dist / 3);
+				int turnBucket = (int) (steps / 10);
 
 				StateKey s = new StateKey(
 						learner.getX(), learner.getY(), Character.toLowerCase(learner.direction),
-						opponents.size(), distBucket);
+						targets.size(), distBucket, turnBucket);
 
 				// --- Opponent random move ---
-				Action oppAct = new Action();
-				oppAct.target = learner.name;
-				char[] oppMoves = {'h', 'j', 'k', 'l', 's'};
-				oppAct.movement = oppMoves[RNG.nextInt(oppMoves.length)];
-				oppAct.direction = switch (oppAct.movement) {
-					case 'h' -> 'w';
-					case 'j' -> 's';
-					case 'k' -> 'n';
-					case 'l' -> 'e';
-					default -> opponent.direction;
-				};
-				opponent.addAction(oppAct);
+				for (Player opponent : opponents) {
+					Action oppAct = new Action();
+					oppAct.target = learner.name;
+					char[] oppMoves = {'h', 'j', 'k', 'l', 's'};
+					oppAct.movement = oppMoves[RNG.nextInt(oppMoves.length)];
+					oppAct.direction = switch (oppAct.movement) {
+						case 'h' -> 'w';
+						case 'j' -> 's';
+						case 'k' -> 'n';
+						case 'l' -> 'e';
+						default -> opponent.direction;
+					};
+					opponent.addAction(oppAct);
+				}
 
 				// --- Learner action ---
 				ActionSpec a = agent.chooseAction(s, epsilon);
-				learner.addAction(a.toAction(learner, opponent));
+				learner.addAction(a.toAction(learner, targets.isEmpty() ? null : targets.get(0)));
 
 				// Perform actions
 				Room before = learner.getCurrentRoom();
 				int bx = learner.getX(), by = learner.getY();
 
 				double actionScore = learner.doAction();
-				opponent.doAction();
+				opponents.forEach(Player::doAction);
 
 				Room after = learner.getCurrentRoom();
 				int ax = (after != null ? after.x : bx);
@@ -279,12 +297,14 @@ public class GameTrainer {
 					reward = -100;
 					done = true;
 				} else if (winningTeam != null) {
-					reward = 1000;
+					reward = winningTeam.equals(learner.team) ? 100 : -100;
 					done = true;
 				} else if (after == null) {
 					reward = -5;
 				} else if (after.throne) {
 					reward = 20;
+				} else if (after.lava) {
+					reward = -50;
 				} else {
 					double d0 = map.distToThrone(before);
 					double d1 = map.distToThrone(after);
@@ -296,8 +316,8 @@ public class GameTrainer {
 
 				double newDist = map.distToThrone(learner.getCurrentRoom());
 				int newDistBucket = (int) (newDist / 3);
-
-				StateKey s2 = new StateKey(ax, ay, newDir, newOpponents.size(), newDistBucket);
+				int newTurnBucket = (int) (steps / 10);
+				StateKey s2 = new StateKey(ax, ay, newDir, newOpponents.size(), newDistBucket, newTurnBucket);
 				double bestNext = Double.NEGATIVE_INFINITY;
 				for (ActionSpec ap : ALL_ACTIONS) {
 					bestNext = Math.max(bestNext, agent.getQ(s2, ap));

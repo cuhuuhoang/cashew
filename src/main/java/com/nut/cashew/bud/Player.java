@@ -141,16 +141,28 @@ public class Player {
 		}
 		double damage = Math.max(2 * sight - Utils.distance(x, y, player.x, player.y), 1);
 		player.health -= damage;
+		boolean throne = player.room.throne;
 		boolean death = player.checkDeath();
 		message("attack " + targetName);
 		double score = 0;
 		if (damage > 0) {
 			score += 10 + damage;
-		}
-		if (death) {
-			score += 100;
+			if (throne) {
+				score += 100;
+			}
+			if (death) {
+				score += 100;
+			}
 		}
 		return score;
+	}
+
+	public boolean damageSelf(int damage) {
+		if (!dead) {
+			health -= damage;
+			return checkDeath();
+		}
+		return true;
 	}
 
 	public boolean checkDeath() {

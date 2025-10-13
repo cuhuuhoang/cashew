@@ -14,6 +14,7 @@ public class Room {
 
 	public boolean blocked;
 	public boolean throne;
+	public boolean lava;
 
 	public Room(int x, int y) {
 		this.x = x;
@@ -35,6 +36,9 @@ public class Room {
 				return players.get(0).render();
 			} catch (Exception ignored) {
 			}
+		}
+		if (lava) {
+			return "\u001B[31m~\u001B[0m";
 		}
 		return "\u001B[32m.\u001B[0m";
 	}
