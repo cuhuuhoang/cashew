@@ -34,7 +34,7 @@ public class EventController {
 		map.players.forEach(player -> {
 //			player.setAiController(AiController.create(player, map));
 			try {
-				player.setAiController(new QLAiController(player, map, "agents"));
+				player.setAiController(new GameTrainer.QLAiController(player, map));
 
 			} catch (Exception e) {
 				throw new RuntimeException(e);

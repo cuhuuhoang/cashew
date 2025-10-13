@@ -9,5 +9,5 @@ count=${1:-1}
 for ((i=1; i<=$count; i++))
 do
     echo "Running iteration $i of $count"
-    java -cp build/libs/cashew-all.jar com.nut.cashew.bud.Ter
+    java -cp build/libs/cashew-all.jar com.nut.cashew.bud.GameTrainer
 done

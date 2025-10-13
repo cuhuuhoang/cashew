@@ -71,7 +71,7 @@ public class MapData {
 					".....................................\n" +
 					".....................................\n" ;
 	public static final List<String> TEAMS = List.of("A", "B");
-	public static final int TOTAL_PLAYER_EACH_TEAM = 5;
+	public static final int TOTAL_PLAYER_EACH_TEAM = 1;
 	public static final int TOTAL_PLAYER = TEAMS.size() * TOTAL_PLAYER_EACH_TEAM;
 	public static final int MAP_FULL_WIDTH = MAP_STRING.split("\n")[0].length();
 	public static final int MAP_FULL_HEIGHT = MAP_STRING.split("\n").length;

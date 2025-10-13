@@ -17,8 +17,8 @@ public class Player {
 	public int x;
 	@Getter
 	public int y;
-	public static final double MAX_HEALTH = 10;
-	public static final int MAX_SIGHT = 15;
+	public static final double MAX_HEALTH = 20;
+	public static final int MAX_SIGHT = 10;
 
 	public double health = MAX_HEALTH;
 	public int sight = MAX_SIGHT;
@@ -145,10 +145,10 @@ public class Player {
 		message("attack " + targetName);
 		double score = 0;
 		if (damage > 0) {
-			score += 100 + damage;
+			score += 10 + damage;
 		}
 		if (death) {
-			score += 1000;
+			score += 100;
 		}
 		return score;
 	}
