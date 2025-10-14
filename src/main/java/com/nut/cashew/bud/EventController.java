@@ -1,6 +1,8 @@
 package com.nut.cashew.bud;
 
 
+import java.io.File;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -35,17 +37,16 @@ public class EventController {
 		// other
 		map.init();
 		screenRender.reset();
-		map.players.forEach(player -> {
-//			player.setAiController(AiController.create(player, map));
-			try {
-				player.setAiController(new GameTrainer.QLAiController(player, map));
-
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-			player.setGlobalBox(screenRender.globalBox);
-			player.respawn();
-		});
+		try {
+			GameTrainer.RlAgent agent = GameTrainer.RlAgent.loadCsv(new File("qtable.csv"));
+			map.players.forEach(player -> {
+				player.setAiController(new GameTrainer.QLAiController(player, map, agent));
+				player.setGlobalBox(screenRender.globalBox);
+				player.respawn();
+			});
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public void loop() {

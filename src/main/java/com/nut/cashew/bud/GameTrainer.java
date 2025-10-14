@@ -187,10 +187,10 @@ public class GameTrainer {
 		private final RlAgent agent;
 		private int turnCounter = 0;
 
-		public QLAiController(Player player, MapData map) throws Exception {
+		public QLAiController(Player player, MapData map, RlAgent agent) {
 			this.player = player;
 			this.map = map;
-			this.agent = RlAgent.loadCsv(new File("qtable.csv"));
+			this.agent = agent;
 		}
 
 		@Override
@@ -303,14 +303,14 @@ public class GameTrainer {
 					reward = -100;
 					done = true;
 				} else if (winningTeam != null) {
-					reward = winningTeam.equals(learner.team) ? 100 : -100;
+					reward = winningTeam.equals(learner.team) ? 1000 : -1000;
 					done = true;
 				} else if (after == null) {
 					reward = -5;
 				} else if (after.throne) {
-					reward = 20;
+					reward = 50;
 				} else if (after.lava) {
-					reward = -50;
+					reward = -100;
 				} else {
 					double d0 = map.distToThrone(before);
 					double d1 = map.distToThrone(after);
