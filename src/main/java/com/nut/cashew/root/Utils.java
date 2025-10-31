@@ -25,7 +25,7 @@ public class Utils {
 		return String.format("\u001B[38;2;%d;%d;%dm", r, g, b); // ANSI 24-bit color code
 	}
 
-	public static double distance(int x1, int y1, int x2, int y2) {
+	public static int distance(int x1, int y1, int x2, int y2) {
 		return Math.abs(x2 - x1) + Math.abs(y2 - y1);
 	}
 }
